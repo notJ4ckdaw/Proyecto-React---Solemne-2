@@ -1,0 +1,15 @@
+@use 'variables';
+@use 'mixins';
+@use 'layout';
+//Estos archivos tienen un guion para indicar que son solo modulos o parciales, no deben ejecutarse de manera independiente. 
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: variables.$font-main;
+}
+
+body {
+  background-color: variables.$bg-light;
+  color: variables.$text-color;
+}
