@@ -1,1 +1,59 @@
-//para la estructura de la pagina (cosas como el header, sidebar, etc)
+@use 'variables';
+
+
+.app-container {
+  display: grid;
+  min-height: 100vh;
+  
+  
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "header"
+    "nav"
+    "main"
+    "aside"
+    "footer";
+
+  
+  @media (min-width: 768px) and (max-width: 1023px) {
+   
+    grid-template-columns: 1fr;
+  }
+
+  
+  @media (min-width: 1024px) {
+    grid-template-columns: 250px 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+      "header header"
+      "nav nav"
+      "aside main"
+      "footer footer";
+  }
+}
+
+header { 
+  grid-area: header; 
+  background-color: variables.$primary-color;
+}
+
+nav { 
+  grid-area: nav; 
+}
+
+main { 
+  grid-area: main; 
+  padding: variables.$espaciado-lg; 
+}
+
+aside { 
+  grid-area: aside; 
+  padding: variables.$espaciado-md; 
+  background-color: variables.$bg-light; 
+}
+
+footer { 
+  grid-area: footer; 
+  background-color: variables.$text-color;
+  color: white;
+}
