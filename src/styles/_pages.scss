@@ -1,0 +1,491 @@
+// ==========================================
+// ESTILOS DE PÁGINAS INDIVIDUALES
+// ==========================================
+
+@import 'variables';
+@import 'mixins';
+
+// ------------------------------------------
+// 1. Homepage (Inicio)
+// ------------------------------------------
+.page-home {
+  .welcome-banner {
+    background: linear-gradient(135deg, $color-bg-dark, lighten($color-bg-dark, 8%));
+    color: $color-text-light;
+    border-radius: $border-radius-lg;
+    padding: $spacing-xl;
+    margin-bottom: $spacing-xl;
+    position: relative;
+    overflow: hidden;
+    box-shadow: $shadow-md;
+
+    .banner-content {
+      position: relative;
+      z-index: 2;
+      max-width: 700px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: $spacing-md;
+      letter-spacing: -0.025em;
+
+      span {
+        color: lighten($color-primary, 15%);
+      }
+    }
+
+    p {
+      font-size: 1.1rem;
+      opacity: 0.85;
+      margin-bottom: $spacing-lg;
+      line-height: 1.6;
+    }
+
+    .banner-shapes {
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+      z-index: 1;
+    }
+  }
+
+  // Cuadrícula de Métricas Resumen (RF-01)
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: $spacing-lg;
+    margin-bottom: $spacing-xl;
+
+    @include respond-to-tablet {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include respond-to-mobile {
+      grid-template-columns: 1fr;
+      grid-gap: $spacing-md;
+    }
+
+    .metric-card {
+      background-color: $color-card-bg;
+      border: 1px solid $color-border;
+      border-radius: $border-radius-md;
+      padding: $spacing-lg;
+      box-shadow: $shadow-sm;
+      transition: $transition-fast;
+
+      &:hover {
+        box-shadow: $shadow-md;
+        border-color: rgba($color-primary, 0.2);
+      }
+
+      .metric-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: $color-text-muted;
+        text-transform: uppercase;
+        margin-bottom: $spacing-xs;
+      }
+
+      .metric-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: $color-text-main;
+        margin-bottom: $spacing-xs;
+      }
+
+      .metric-sub {
+        font-size: 0.8rem;
+        font-weight: 500;
+
+        &.positive {
+          color: $color-success;
+        }
+        &.negative {
+          color: $color-danger;
+        }
+      }
+    }
+  }
+
+  // Sección de Explicación de VCM
+  .vcm-explanation {
+    @include premium-card;
+    margin-bottom: $spacing-xl;
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: $spacing-md;
+    }
+
+    p {
+      color: $color-text-muted;
+      margin-bottom: $spacing-md;
+    }
+
+    .features-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: $spacing-lg;
+      margin-top: $spacing-lg;
+
+      @include respond-to-mobile {
+        grid-template-columns: 1fr;
+        gap: $spacing-md;
+      }
+
+      .feature-item {
+        background-color: $color-bg-light;
+        padding: $spacing-md;
+        border-radius: $border-radius-sm;
+        border: 1px solid $color-border;
+
+        h3 {
+          font-size: 1.05rem;
+          margin-bottom: $spacing-xs;
+          color: $color-primary;
+        }
+
+        p {
+          font-size: 0.85rem;
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
+
+// ------------------------------------------
+// 2. MaterialesList (Mapa y Tarjetas)
+// ------------------------------------------
+.page-zones {
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: $spacing-sm;
+  }
+
+  .section-description {
+    color: $color-text-muted;
+    margin-bottom: $spacing-xl;
+  }
+
+  // Lista de tarjetas en Flexbox / Grilla flexible
+  .zones-flex-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: $spacing-lg;
+    margin-bottom: $spacing-xl;
+
+    @include respond-to-tablet {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include respond-to-mobile {
+      grid-template-columns: 1fr; // RNF-03: Listado de materiales pasa a una sola columna
+    }
+  }
+
+  // Área Administrativa de Formulario (Flexbox de dos columnas o Grid)
+  .admin-panel {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: $spacing-xl;
+    margin-top: $spacing-xl;
+
+    @include respond-to-mobile {
+      grid-template-columns: 1fr;
+      gap: $spacing-lg;
+    }
+
+    .form-container {
+      @include premium-card;
+
+      h3 {
+        font-size: 1.3rem;
+        margin-bottom: $spacing-lg;
+        border-bottom: 2px solid $color-bg-light;
+        padding-bottom: $spacing-sm;
+      }
+    }
+
+    .admin-info {
+      @include premium-card;
+      background-color: lighten($color-bg-dark, 5%);
+      color: $color-text-light;
+      border: none;
+
+      h3 {
+        font-size: 1.3rem;
+        margin-bottom: $spacing-md;
+      }
+
+      p {
+        opacity: 0.8;
+        font-size: 0.95rem;
+        margin-bottom: $spacing-md;
+      }
+
+      .rules-list {
+        list-style: none;
+        padding: 0;
+
+        li {
+          position: relative;
+          padding-left: $spacing-lg;
+          margin-bottom: $spacing-sm;
+          font-size: 0.9rem;
+          opacity: 0.9;
+
+          &::before {
+            content: "⚠️";
+            position: absolute;
+            left: 0;
+            top: 1px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Estilos de Formularios (Accesibilidad RNF-01 & Estética)
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+
+  label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $color-text-muted;
+  }
+
+  input, select, textarea {
+    font-family: $font-family-base;
+    width: 100%;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-border;
+    border-radius: $border-radius-sm;
+    font-size: 0.95rem;
+    color: $color-text-main;
+    background-color: $color-bg-light;
+    transition: $transition-fast;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+      background-color: $color-card-bg;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+
+  // Validación Visual
+  &.invalid {
+    input, select, textarea {
+      border-color: $color-danger;
+      background-color: rgba($color-danger, 0.02);
+
+      &:focus {
+        box-shadow: 0 0 0 3px rgba($color-danger, 0.15);
+      }
+    }
+
+    .error-msg {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: $color-danger;
+      margin-top: 2px;
+    }
+  }
+
+  &.valid {
+    input, select {
+      border-color: $color-success;
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-lg;
+
+  .btn-submit {
+    @include premium-button($color-primary);
+    flex-grow: 1;
+  }
+
+  .btn-reset {
+    @include premium-button($color-border, $color-text-muted);
+    border: 1px solid $color-border;
+    background-color: transparent;
+    box-shadow: none;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+// ------------------------------------------
+// 3. MaterialDetail (Detalle de la Zona)
+// ------------------------------------------
+.page-detail {
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $spacing-xl;
+
+    @include respond-to-mobile {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: $spacing-md;
+    }
+
+    .btn-back {
+      @include premium-button($color-border, $color-text-muted);
+      border: 1px solid $color-border;
+      background-color: transparent;
+      box-shadow: none;
+
+      &:hover {
+        background-color: rgba(0,0,0,0.02);
+      }
+    }
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-xl;
+    margin-bottom: $spacing-xl;
+
+    @include respond-to-mobile {
+      grid-template-columns: 1fr;
+    }
+
+    .detail-image-card {
+      @include premium-card;
+      padding: 0;
+      overflow: hidden;
+      height: 350px;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+
+    .detail-info-card {
+      @include premium-card;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+
+      .info-header {
+        margin-bottom: $spacing-md;
+
+        .detail-badge {
+          display: inline-block;
+          padding: $spacing-xs $spacing-sm;
+          border-radius: 20px;
+          color: $color-text-light;
+          font-size: 0.8rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          margin-bottom: $spacing-sm;
+
+          &.hot { background-color: $color-hot; }
+          &.warm { background-color: $color-warm; }
+          &.cold { background-color: $color-cold; }
+        }
+        
+        h2 {
+          font-size: 1.8rem;
+          font-weight: 800;
+          color: $color-text-main;
+        }
+      }
+
+      .info-body {
+        margin-bottom: $spacing-md;
+      }
+
+      .info-footer {
+        padding-top: $spacing-md;
+        border-top: 1px solid $color-border;
+      }
+    }
+  }
+
+  .detail-recommendations {
+    @include premium-card;
+
+    h3 {
+      font-size: 1.3rem;
+      margin-bottom: $spacing-md;
+      color: $color-primary;
+    }
+
+    .rec-item {
+      padding: $spacing-md;
+      background-color: $color-bg-light;
+      border-radius: $border-radius-sm;
+      border-left: 4px solid $color-primary;
+      margin-bottom: $spacing-md;
+
+      h4 {
+        margin-bottom: $spacing-xs;
+        font-weight: 700;
+      }
+
+      p {
+        font-size: 0.9rem;
+        margin-bottom: 0;
+        color: $color-text-muted;
+      }
+    }
+  }
+}
+
+// ------------------------------------------
+// 4. Contacto (Formulario de Soporte)
+// ------------------------------------------
+.page-contact {
+  max-width: 650px;
+  margin: 0 auto;
+
+  .contact-card {
+    @include premium-card;
+    margin-top: $spacing-xl;
+
+    h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: $spacing-sm;
+      color: $color-text-main;
+      text-align: center;
+    }
+
+    p {
+      color: $color-text-muted;
+      text-align: center;
+      margin-bottom: $spacing-xl;
+    }
+  }
+}

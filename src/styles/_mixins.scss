@@ -1,0 +1,95 @@
+// ==========================================
+// MIXINS REUTILIZABLES SASS/SCSS
+// ==========================================
+
+@import 'variables';
+
+// Flexbox Center (Fácil alineación)
+@mixin flex-center($direction: row) {
+  display: flex;
+  direction: $direction;
+  justify-content: center;
+  align-items: center;
+}
+
+// Media Query para pantallas Móviles (< 768px)
+@mixin respond-to-mobile {
+  @media (max-width: #{$breakpoint-mobile - 1px}) {
+    @content;
+  }
+}
+
+// Media Query para pantallas Tablet (768px a 1023px)
+@mixin respond-to-tablet {
+  @media (min-width: #{$breakpoint-mobile}) and (max-width: #{$breakpoint-tablet - 1px}) {
+    @content;
+  }
+}
+
+// Media Query para pantallas Escritorio (> 1024px)
+@mixin respond-to-desktop {
+  @media (min-width: #{$breakpoint-tablet}) {
+    @content;
+  }
+}
+
+// Estilo Base de Tarjetas Premium con micro-animaciones
+@mixin premium-card {
+  background-color: $color-card-bg;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-sm;
+  padding: $spacing-lg;
+  transition: $transition-normal;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+    border-color: lighten($color-primary, 30%);
+  }
+}
+
+// Estilo de Botón Premium
+@mixin premium-button($bg-color: $color-primary, $text-color: $color-text-light) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  background-color: $bg-color;
+  color: $text-color;
+  border: none;
+  border-radius: $border-radius-sm;
+  padding: $spacing-sm $spacing-lg;
+  font-family: $font-family-base;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: $transition-fast;
+  text-decoration: none;
+  box-shadow: $shadow-sm;
+
+  &:hover {
+    background-color: darken($bg-color, 8%);
+    transform: translateY(-1px);
+    box-shadow: $shadow-md;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    background-color: $color-neutral-zone;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+// Efecto de Glassmorphism sutil para Paneles
+@mixin glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}

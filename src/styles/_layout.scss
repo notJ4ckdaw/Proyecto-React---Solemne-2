@@ -1,0 +1,128 @@
+// ==========================================
+// ESTRUCTURA DE LAYOUT (CSS GRID GENERAL)
+// ==========================================
+
+@import 'variables';
+@import 'mixins';
+
+// Reseteo General e Inicialización
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: $font-family-base;
+  background-color: $color-bg-light;
+  color: $color-text-main;
+  min-height: 100vh;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+// Contenedor Principal en CSS Grid (RNF-02 & RNF-03)
+.app-container {
+  display: grid;
+  min-height: 100vh;
+  grid-template-rows: auto 1fr auto;
+  
+  // Escritorio (> 1024px) (Layout multi-columna & Menú horizontal)
+  @include respond-to-desktop {
+    grid-template-columns: 260px 1fr;
+    grid-template-areas:
+      "sidebar header"
+      "sidebar main"
+      "sidebar footer";
+  }
+
+  // Tablet (768px - 1023px) (Layout ajustado, menú puede colapsar)
+  @include respond-to-tablet {
+    grid-template-columns: 220px 1fr;
+    grid-template-areas:
+      "sidebar header"
+      "sidebar main"
+      "sidebar footer";
+  }
+
+  // Móvil (< 768px) (Menú vertical, sidebar debajo del contenido principal)
+  @include respond-to-mobile {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+      "header"
+      "main"
+      "sidebar"
+      "footer";
+  }
+}
+
+// Asignación de Áreas de Grid Semánticas
+.app-header {
+  grid-area: header;
+  background-color: $color-card-bg;
+  border-bottom: 1px solid $color-border;
+  padding: $spacing-md $spacing-xl;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  box-shadow: $shadow-sm;
+
+  @include respond-to-mobile {
+    padding: $spacing-md;
+    flex-direction: column;
+    gap: $spacing-sm;
+    text-align: center;
+  }
+}
+
+.app-sidebar {
+  grid-area: sidebar;
+  background-color: $color-bg-dark;
+  color: $color-text-light;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: $spacing-xl $spacing-md;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 20;
+
+  @include respond-to-mobile {
+    border-right: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: $spacing-lg $spacing-md;
+  }
+}
+
+.app-main {
+  grid-area: main;
+  padding: $spacing-xl;
+  overflow-y: auto;
+  max-width: 1200px;
+  width: 100%;
+  justify-self: center;
+
+  @include respond-to-mobile {
+    padding: $spacing-md;
+  }
+}
+
+.app-footer {
+  grid-area: footer;
+  background-color: $color-card-bg;
+  border-top: 1px solid $color-border;
+  padding: $spacing-md $spacing-xl;
+  text-align: center;
+  color: $color-text-muted;
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  @include respond-to-mobile {
+    flex-direction: column;
+    gap: $spacing-xs;
+    padding: $spacing-md;
+  }
+}
