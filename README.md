@@ -2,15 +2,15 @@
 
 Este proyecto ha sido desarrollado como respuesta técnica para la evaluación **Solemne 2** en la modalidad de frontend funcional, utilizando la escala cromática para el análisis de comportamiento de clientes (Mapa de calor) en supermercados.
 
----
 
-## 🛠️ Tecnologías Utilizadas
 
-* **React (v18)** - Biblioteca base para estructurar componentes interactivos y estado dinámico.
-* **React Router (v6)** - Sistema de enrutamiento dinámico para navegar sin refrescar la página.
-* **SASS / SCSS** - Preprocesador CSS para toda la arquitectura de estilos modulares.
-* **Vite** - Empaquetador ultra-rápido para el entorno de desarrollo.
-* **HTML5 Semántico y Accesible (A11y)**.
+ 🛠️ Tecnologías Utilizadas
+
+ **React (v18)** - Biblioteca base para estructurar componentes interactivos y estado dinámico.
+ **React Router (v6)** - Sistema de enrutamiento dinámico para navegar sin refrescar la página.
+ **SASS / SCSS** - Preprocesador CSS para toda la arquitectura de estilos modulares.
+**Vite** - Empaquetador ultra-rápido para el entorno de desarrollo.
+**HTML5 Semántico y Accesible (A11y)**.
 
 ---
 
@@ -41,7 +41,7 @@ Para cumplir rigurosamente con las directrices académicas obligatorias de la ev
 
 ---
 
-## ⚡ Guía de Instalación y Ejecución Local
+##  Guía de Instalación y Ejecución Local
 
 Para levantar el proyecto en su máquina local, asegúrese de tener **Node.js (versión 16 o superior)** instalado y ejecute:
 
