@@ -4,7 +4,7 @@ Este proyecto ha sido desarrollado como respuesta técnica para la evaluación *
 
 
 
- 🛠️ Tecnologías Utilizadas
+ Tecnologías Utilizadas
 
  **React (v18)** - Biblioteca base para estructurar componentes interactivos y estado dinámico.
  **React Router (v6)** - Sistema de enrutamiento dinámico para navegar sin refrescar la página.
@@ -14,7 +14,7 @@ Este proyecto ha sido desarrollado como respuesta técnica para la evaluación *
 
 ---
 
-## 📋 Mapeo de Requerimientos de la Rúbrica
+ Mapeo de Requerimientos de la Rúbrica
 
 Para cumplir rigurosamente con las directrices académicas obligatorias de la evaluación, el sistema mapea la estructura de "Materiales" a **Zonas y Departamentos de la tienda**:
 
