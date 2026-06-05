@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { inicialMateriales } from '../data/materiales';
 import MaterialCard from '../components/MaterialCard';
 import Mensaje from '../components/Mensaje';
@@ -8,6 +9,7 @@ const MaterialesList = () => {
   const [materiales, setMateriales] = useState(inicialMateriales);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredMateriales, setFilteredMateriales] = useState(inicialMateriales);
+  const [hoveredZoneId, setHoveredZoneId] = useState(null);
 
   // Estados del Formulario (Hook Obligatorio 4.2)
   const [formData, setFormData] = useState({
@@ -24,7 +26,7 @@ const MaterialesList = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
-  // 2. useEffect para filtrado reactivo de zonas (Hook Obligatorio 4.2)
+  // 2. useEffect para filtrado reactivo de la lista de zonas (Hook Obligatorio 4.2)
   useEffect(() => {
     const timeout = setTimeout(() => {
       const filtered = materiales.filter(m =>
@@ -39,7 +41,7 @@ const MaterialesList = () => {
 
   // Cambiar el título del documento al cargar
   useEffect(() => {
-    document.title = 'Jumbo Cencosud - Zonas';
+    document.title = 'Jumbo Cencosud - Mapa de Calor';
   }, []);
 
   // 3. Manejo de inputs del formulario
@@ -59,7 +61,7 @@ const MaterialesList = () => {
   // 4. Validación visual y lógica de guardado (RF-02, RF-03)
   const validateForm = () => {
     const errors = {};
-    if (!formData.nombre.trim()) errors.nombre = 'El nombre de la zona es obligatorio.';
+    if (!formData.nombre.trim()) errors.nombre = 'El nombre del departamento es obligatorio.';
     if (!formData.codigo.trim()) {
       errors.codigo = 'El código es obligatorio.';
     } else if (!isEditing && materiales.some(m => m.codigo.toUpperCase() === formData.codigo.toUpperCase())) {
@@ -101,7 +103,11 @@ const MaterialesList = () => {
       const nuevaZona = {
         ...formData,
         id: materiales.length > 0 ? Math.max(...materiales.map(m => m.id)) + 1 : 1,
-        codigo: formData.codigo.toUpperCase()
+        codigo: formData.codigo.toUpperCase(),
+        color: "orange",
+        colorHex: "#f97316",
+        x: "50%",
+        y: "50%"
       };
       setMateriales(prev => [...prev, nuevaZona]);
       setMensaje({
@@ -144,47 +150,327 @@ const MaterialesList = () => {
 
   return (
     <section className="page-zones">
-      <h2 className="section-title">Mapa de Calor y Zonas del Supermercado</h2>
-      <p className="section-description">
-        Monitoreo en tiempo real del tráfico de clientes. Haz clic en las zonas del mapa para ver detalles o utiliza el formulario de abajo para actualizar datos.
-      </p>
+      {/* Barra de Control de Métricas Horizontal (del mockup) */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        padding: '0.8rem 1.2rem',
+        marginBottom: '1.5rem',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '1.5rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+          {/* Métrica Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Métrica:</span>
+            <select style={{
+              border: '1px solid #cbd5e1',
+              padding: '0.4rem 0.8rem',
+              borderRadius: '6px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#0f172a',
+              backgroundColor: '#f8fafc',
+              cursor: 'pointer'
+            }}>
+              <option>👥 Concentración de clientes</option>
+            </select>
+          </div>
 
-      {/* 1. Componente de Mapa de Calor Visual Interactivo (del wireframe) */}
-      <div className="heatmap-container">
-        <div className="heatmap-header">
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>
-            Mapa Central - Distribución Planta Baja (Piso 1)
+          {/* Vista Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Vista:</span>
+            <select style={{
+              border: '1px solid #cbd5e1',
+              padding: '0.4rem 0.8rem',
+              borderRadius: '6px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#0f172a',
+              backgroundColor: '#f8fafc',
+              cursor: 'pointer'
+            }}>
+              <option>🗺️ Mapa de calor</option>
+            </select>
+          </div>
+
+          {/* Intensidad Scale */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Intensidad:</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700 }}>Baja</span>
+            <div style={{
+              width: '120px',
+              height: '8px',
+              borderRadius: '4px',
+              background: 'linear-gradient(to right, #38bdf8, #10b981, #f59e0b, #ef4444)'
+            }}></div>
+            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700 }}>Alta</span>
+          </div>
+        </div>
+
+        {/* Datos actualizados status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
+          <span style={{ color: '#10b981', fontSize: '1.1rem' }}>●</span>
+          <span>Datos actualizados Hoy, 10:30 a. m.</span>
+          <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }} title="Recargar datos">🔄</button>
+        </div>
+      </div>
+
+      {/* Mapa Central - Distribución de Tienda Jumbo (con Zonas Sidebar) */}
+      <div className="heatmap-container" style={{ padding: '1.5rem', backgroundColor: '#ffffff' }}>
+        
+        {/* Header del Mapa Central matching Image 1 exactly */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1.5rem',
+          borderBottom: '1px solid #e2e8f0',
+          paddingBottom: '1rem',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>
+            Mapa Central – Distribución Planta Baja (Piso 1)
           </h3>
-          <span style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
-            🟢 Datos Sensores Activos | Carga: 100%
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: '#64748b', fontWeight: 700 }}>
+            <span className="pulse-dot" style={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              backgroundColor: '#10b981',
+              display: 'inline-block'
+            }}></span>
+            <span>Datos Sensores Activos | Carga: 100%</span>
+          </div>
         </div>
 
-        {/* Grilla CSS Grid del layout de la tienda */}
-        <div className="heatmap-grid" role="img" aria-label="Plano de distribución del supermercado coloreado por tráfico">
-          {materiales.slice(0, 6).map((m) => (
-            <div 
-              key={m.id} 
-              className={`zone-cell ${m.estado}`}
-              onClick={() => handleEditClick(m)}
-              title={`Clic para editar tráfico de ${m.nombre}`}
+        <div className="heatmap-wrapper">
+          
+          {/* 1. PLANO DEL SUPERMERCADO (Mapa de Calor Visual Interactivo - Diseño Imagen 2) */}
+          <div className="heatmap-plan" aria-label="Plano interactivo de la distribución de pasillos y flujo de clientes en Jumbo">
+            
+            {/* SVG Floor Plan Background (Diseño vectorial de alta calidad de la tienda) */}
+            <svg 
+              width="100%" 
+              height="100%" 
+              viewBox="0 0 800 500" 
+              preserveAspectRatio="none"
+              style={{ position: 'absolute', top: 0, left: 0, zIndex: 1, pointerEvents: 'none' }}
             >
-              <div className="zone-name">{m.nombre}</div>
-              <div className="zone-traffic">{m.cantidad} pers/h</div>
-              <div className="zone-hover-tip">Editar Datos ⚙️</div>
+              <defs>
+                <pattern id="blueprint-grid" width="25" height="25" patternUnits="userSpaceOnUse">
+                  <path d="M 25 0 L 0 0 0 25" fill="none" stroke="#f1f5f9" strokeWidth="1.5" />
+                  <path d="M 125 0 L 0 0 0 125" fill="none" stroke="#e2e8f0" strokeWidth="1" />
+                </pattern>
+              </defs>
+              
+              {/* Background Grid */}
+              <rect width="100%" height="100%" fill="url(#blueprint-grid)" />
+              
+              {/* Store Outer Wall */}
+              <rect x="15" y="15" width="770" height="470" rx="10" fill="none" stroke="#94a3b8" strokeWidth="3" />
+              <rect x="18" y="18" width="764" height="464" rx="8" fill="none" stroke="#cbd5e1" strokeWidth="1" />
+
+              {/* ENTRADA / SALIDA AREA (x: 160, y: 300) */}
+              <g opacity="0.8">
+                <path d="M 15 250 L 100 250" stroke="#94a3b8" strokeWidth="2.5" />
+                <path d="M 15 350 L 100 350" stroke="#94a3b8" strokeWidth="2.5" />
+                <rect x="15" y="250" width="75" height="100" fill="#eff6ff" opacity="0.6" />
+                <line x1="85" y1="260" x2="85" y2="340" stroke="#3b82f6" strokeWidth="2" strokeDasharray="3 3" />
+                <path d="M 35 285 L 65 285 M 55 275 L 65 285 L 55 295" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <path d="M 65 315 L 35 315 M 45 305 L 35 315 L 45 325" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <text x="30" y="340" fontSize="8" fontWeight="bold" fill="#3b82f6">ACCESO</text>
+              </g>
+
+              {/* FRUTAS Y VERDURAS (x: 280, y: 150) */}
+              <g opacity="0.8">
+                <rect x="200" y="80" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
+                <rect x="290" y="80" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
+                <rect x="200" y="140" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
+                <rect x="290" y="140" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
+                <circle cx="220" cy="100" r="6" fill="#ef4444" />
+                <circle cx="250" cy="100" r="6" fill="#eab308" />
+                <circle cx="310" cy="100" r="6" fill="#16a34a" />
+                <circle cx="340" cy="100" r="6" fill="#f97316" />
+                <circle cx="220" cy="160" r="6" fill="#16a34a" />
+                <circle cx="250" cy="160" r="6" fill="#dc2626" />
+                <circle cx="310" cy="160" r="6" fill="#eab308" />
+                <circle cx="340" cy="160" r="6" fill="#16a34a" />
+                <text x="235" y="65" fontSize="9" fontWeight="bold" fill="#16a34a">FRUTAS & VERDURAS</text>
+              </g>
+
+              {/* CARNICERÍA (x: 560, y: 140) */}
+              <g opacity="0.8">
+                <rect x="480" y="50" width="160" height="25" rx="3" fill="#fee2e2" stroke="#fca5a5" strokeWidth="1.5" />
+                <rect x="480" y="105" width="70" height="30" rx="3" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
+                <rect x="570" y="105" width="70" height="30" rx="3" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
+                <line x1="490" y1="62" x2="630" y2="62" stroke="#ef4444" strokeWidth="1.5" />
+                <text x="525" y="40" fontSize="9" fontWeight="bold" fill="#dc2626">CARNES & AVES</text>
+              </g>
+
+              {/* ABARROTES (x: 424, y: 275) */}
+              <g opacity="0.8">
+                <rect x="300" y="210" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
+                <rect x="300" y="250" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
+                <rect x="300" y="290" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
+                <rect x="300" y="330" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
+                <line x1="390" y1="210" x2="390" y2="230" stroke="#cbd5e1" strokeWidth="1" />
+                <line x1="390" y1="250" x2="390" y2="270" stroke="#cbd5e1" strokeWidth="1" />
+                <line x1="390" y1="290" x2="390" y2="310" stroke="#cbd5e1" strokeWidth="1" />
+                <line x1="390" y1="330" x2="390" y2="350" stroke="#cbd5e1" strokeWidth="1" />
+                <text x="365" y="198" fontSize="9" fontWeight="bold" fill="#475569">PASILLOS ABARROTES</text>
+              </g>
+
+              {/* LÁCTEOS (x: 600, y: 275) */}
+              <g opacity="0.8">
+                <rect x="680" y="160" width="25" height="190" rx="3" fill="#e0f2fe" stroke="#38bdf8" strokeWidth="1.5" />
+                <rect x="610" y="220" width="50" height="35" rx="3" fill="#e0f2fe" stroke="#38bdf8" strokeWidth="1.5" />
+                <line x1="692" y1="170" x2="692" y2="340" stroke="#0284c7" strokeWidth="2" strokeDasharray="10 5" />
+                <text x="615" y="150" fontSize="9" fontWeight="bold" fill="#0284c7">LÁCTEOS & QUESOS</text>
+              </g>
+
+              {/* PANADERÍA (x: 280, y: 410) */}
+              <g opacity="0.8">
+                <rect x="200" y="390" width="100" height="35" rx="4" fill="#fef3c7" stroke="#f59e0b" strokeWidth="1.5" />
+                <rect x="200" y="435" width="60" height="25" rx="3" fill="#fffbeb" stroke="#fde68a" stroke="1" />
+                <text x="215" y="380" fontSize="9" fontWeight="bold" fill="#ea580c">PANADERÍA</text>
+              </g>
+
+              {/* CAJAS / CHECKOUT (x: 440, y: 410) */}
+              <g opacity="0.8">
+                <g transform="translate(350, 390)">
+                  <rect x="0" y="0" width="12" height="45" rx="2" fill="#faf5ff" stroke="#a855f7" strokeWidth="1.2" />
+                  <rect x="15" y="0" width="8" height="8" rx="1" fill="#a855f7" />
+                  <line x1="6" y1="10" x2="6" y2="40" stroke="#c084fc" strokeWidth="1" />
+                </g>
+                <g transform="translate(385, 390)">
+                  <rect x="0" y="0" width="12" height="45" rx="2" fill="#faf5ff" stroke="#a855f7" strokeWidth="1.2" />
+                  <rect x="15" y="0" width="8" height="8" rx="1" fill="#a855f7" />
+                  <line x1="6" y1="10" x2="6" y2="40" stroke="#c084fc" strokeWidth="1" />
+                </g>
+                <g transform="translate(420, 390)">
+                  <rect x="0" y="0" width="12" height="45" rx="2" fill="#faf5ff" stroke="#a855f7" strokeWidth="1.2" />
+                  <rect x="15" y="0" width="8" height="8" rx="1" fill="#a855f7" />
+                  <line x1="6" y1="10" x2="6" y2="40" stroke="#c084fc" strokeWidth="1" />
+                </g>
+                <g transform="translate(455, 390)">
+                  <rect x="0" y="0" width="12" height="45" rx="2" fill="#faf5ff" stroke="#a855f7" strokeWidth="1.2" />
+                  <rect x="15" y="0" width="8" height="8" rx="1" fill="#a855f7" />
+                  <line x1="6" y1="10" x2="6" y2="40" stroke="#c084fc" strokeWidth="1" />
+                </g>
+                <text x="390" y="380" fontSize="9" fontWeight="bold" fill="#7e22ce">CAJAS</text>
+              </g>
+
+              {/* BEBIDAS (x: 584, y: 410) */}
+              <g opacity="0.8">
+                <rect x="510" y="390" width="100" height="30" rx="3" fill="#ccfbf1" stroke="#0d9488" strokeWidth="1.5" />
+                <rect x="520" y="430" width="80" height="25" rx="3" fill="#f0fdfa" stroke="#5eead4" strokeWidth="1.2" />
+                <text x="535" y="380" fontSize="9" fontWeight="bold" fill="#0f766e">BEBIDAS & LIQUIDOS</text>
+              </g>
+
+            </svg>
+
+            {/* Renderizar dinámicamente los hotspots de calor (círculos difusos) y badges */}
+            {materiales.map((m) => {
+              const isHovered = hoveredZoneId === m.id;
+              const connectorHeight = 35;
+              
+              return (
+                <React.Fragment key={m.id}>
+                  {/* Círculo difuso de calor (glowing gradient) */}
+                  <div 
+                    className={`hotspot-circle ${m.estado}`}
+                    style={{
+                      left: m.x,
+                      top: m.y,
+                      transform: `translate(-50%, -50%) scale(${isHovered ? 1.2 : 1})`
+                    }}
+                  ></div>
+
+                  {/* Punto central del sensor */}
+                  <div 
+                    className="hotspot-center-dot"
+                    style={{
+                      left: m.x,
+                      top: m.y,
+                      backgroundColor: m.colorHex
+                    }}
+                  ></div>
+
+                  {/* Línea conectora fina vertical */}
+                  <div 
+                    className="hotspot-connector"
+                    style={{
+                      left: m.x,
+                      top: `calc(${m.y} - ${connectorHeight}px)`,
+                      height: `${connectorHeight}px`,
+                      borderColor: m.colorHex,
+                      opacity: isHovered ? 1 : 0.6
+                    }}
+                  ></div>
+
+                  {/* Badge / Pill del Hotspot interactivo */}
+                  <div 
+                    className={`hotspot-pill ${isHovered ? 'active-pill' : ''}`}
+                    style={{
+                      left: m.x,
+                      top: `calc(${m.y} - ${connectorHeight}px)`,
+                      borderColor: m.colorHex
+                    }}
+                    onMouseEnter={() => setHoveredZoneId(m.id)}
+                    onMouseLeave={() => setHoveredZoneId(null)}
+                    onClick={() => handleEditClick(m)}
+                  >
+                    <span className="pill-dot" style={{ backgroundColor: m.colorHex }}></span>
+                    <span className="pill-text">{m.nombre}</span>
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {/* 2. PANEL LATERAL DE ZONAS (Del mockup) */}
+          <div className="heatmap-sidebar">
+            <div>
+              <h3 className="sidebar-title">Zonas</h3>
+              <ul className="zones-list">
+                {materiales.map((m) => (
+                  <li 
+                    key={m.id} 
+                    className={`zone-item ${hoveredZoneId === m.id ? 'active-item' : ''}`}
+                    onMouseEnter={() => setHoveredZoneId(m.id)}
+                    onMouseLeave={() => setHoveredZoneId(null)}
+                    onClick={() => handleEditClick(m)}
+                  >
+                    <span className={`dot ${m.color}`} style={{ backgroundColor: m.colorHex }}></span>
+                    <span>{m.nombre}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          ))}
+            
+            <div className="sidebar-footer">
+              Pasa el cursor sobre una zona para ver más información y su ubicación exacta.
+            </div>
+          </div>
+
         </div>
 
-        {/* Leyenda */}
+        {/* Leyenda de Colores */}
         <div className="heatmap-legend">
           <div className="legend-item">
             <span className="dot hot"></span>
-            <span>Tránsito Alto / Zona Caliente (&gt;150 pers/h)</span>
+            <span>Tránsito Alto / Zona Caliente (&gt;140 pers/h)</span>
           </div>
           <div className="legend-item">
             <span className="dot warm"></span>
-            <span>Tránsito Medio / Zona Templada (70-150 pers/h)</span>
+            <span>Tránsito Medio / Zona Templada (70-140 pers/h)</span>
           </div>
           <div className="legend-item">
             <span className="dot cold"></span>
@@ -193,14 +479,71 @@ const MaterialesList = () => {
         </div>
       </div>
 
-      {/* 2. Barra de Búsqueda y Filtro Reactivo */}
+      {/* 3. BARRA DE MÉTRICAS GENERALES EN FOOTER INTERNO (Mockup) */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '1rem',
+        backgroundColor: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        padding: '1rem 1.2rem',
+        marginBottom: '2.5rem',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+      }}>
+        {/* Visitantes totales */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', borderRight: '1px solid #f1f5f9', paddingRight: '0.5rem' }}>
+          <span style={{ fontSize: '1.5rem', backgroundColor: '#e8f5e9', padding: '8px', borderRadius: '50%' }}>👥</span>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Visitantes totales</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>28,450</div>
+            <div style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 700 }}>↑ 12.5% vs. semana anterior</div>
+          </div>
+        </div>
+
+        {/* Tiempo promedio */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', borderRight: '1px solid #f1f5f9', paddingRight: '0.5rem' }}>
+          <span style={{ fontSize: '1.5rem', backgroundColor: '#fff8e1', padding: '8px', borderRadius: '50%' }}>🕒</span>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Tiempo promedio en tienda</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>36:45 min</div>
+            <div style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 700 }}>↑ 8.3% vs. semana anterior</div>
+          </div>
+        </div>
+
+        {/* Zona con más tráfico */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', borderRight: '1px solid #f1f5f9', paddingRight: '0.5rem' }}>
+          <span style={{ fontSize: '1.5rem', backgroundColor: '#ffebee', padding: '8px', borderRadius: '50%' }}>📈</span>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Zona con más tráfico</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>Entrada / Salida</div>
+            <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>24.6% del tráfico total</div>
+          </div>
+        </div>
+
+        {/* Zona con menos tráfico */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+          <span style={{ fontSize: '1.5rem', backgroundColor: '#e0f2fe', padding: '8px', borderRadius: '50%' }}>📉</span>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Zona con menos tráfico</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>Lácteos</div>
+            <div style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 700 }}>+4.3% del tráfico total</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. BUSCADOR Y LISTADO DE TARJETAS (Cumple RF-02, RNF-03) */}
+      <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '1rem', color: '#0f172a' }}>
+        Registro e Inventario de Zonas
+      </h3>
+      
       <div style={{
         backgroundColor: '#ffffff',
         border: '1px solid #e2e8f0',
         borderRadius: '12px',
         padding: '1rem',
         marginBottom: '2rem',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
         display: 'flex',
         alignItems: 'center',
         gap: '1rem'
@@ -239,15 +582,8 @@ const MaterialesList = () => {
         )}
       </div>
 
-      {/* Mensaje de Retroalimentación Obligatorio (RF-03, 4.2) */}
-      <Mensaje tipo={mensaje.tipo} texto={mensaje.texto} />
-
-      {/* 3. Listado de Zonas usando el Componente Reutilizable MaterialCard (RF-02) */}
-      <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '1rem', color: '#0f172a' }}>
-        Registro de Departamentos ({filteredMateriales.length})
-      </h3>
-      
-      <div className="zones-flex-container">
+      {/* Listado de Tarjetas Reutilizables */}
+      <div className="zones-flex-container" style={{ marginBottom: '3rem' }}>
         {filteredMateriales.length > 0 ? (
           filteredMateriales.map((m) => (
             <MaterialCard 
@@ -262,29 +598,30 @@ const MaterialesList = () => {
           ))
         ) : (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 1rem', color: '#64748b' }}>
-            <span style={{ fontSize: '2rem' }}>⚠️</span>
-            <p style={{ marginTop: '1rem', fontWeight: 600 }}>No se encontraron zonas que coincidan con la búsqueda.</p>
+            <p style={{ fontWeight: 600 }}>No se encontraron departamentos que coincidan.</p>
           </div>
         )}
       </div>
 
-      {/* 4. Panel Administrativo (Formulario de Registro/Actualización) - Cumple RF-02, 4.2 */}
+      {/* Mensaje de confirmación del formulario */}
+      <Mensaje tipo={mensaje.tipo} texto={mensaje.texto} />
+
+      {/* 5. FORMULARIO DE ADMINISTRACIÓN (Requisito Obligatorio Rúbrica) */}
       <div className="admin-panel" id="admin-form">
         
         {/* Formulario */}
         <div className="form-container">
-          <h3>{isEditing ? '⚙️ Actualizar Tránsito de Zona' : '➕ Registrar Nueva Zona de Tienda'}</h3>
+          <h3>{isEditing ? '⚙️ Actualizar Datos de Zona' : '➕ Registrar Nueva Zona en Plano'}</h3>
           
           <form onSubmit={handleSubmit} noValidate>
             
-            {/* Campo 1: Nombre (Dropdown para garantizar datos limpios) */}
             <div className={`form-group ${formErrors.nombre ? 'invalid' : ''}`}>
               <label htmlFor="nombre-input">Nombre del Departamento</label>
               <input
                 id="nombre-input"
                 type="text"
                 name="nombre"
-                placeholder="Ej. Panadería, Carnicería, Fiambrería..."
+                placeholder="Ej. Bebidas, Abarrotes, Panadería..."
                 value={formData.nombre}
                 onChange={handleInputChange}
                 aria-invalid={formErrors.nombre ? "true" : "false"}
@@ -295,17 +632,16 @@ const MaterialesList = () => {
               )}
             </div>
 
-            {/* Campo 2: Código */}
             <div className={`form-group ${formErrors.codigo ? 'invalid' : ''}`}>
               <label htmlFor="codigo-input">Código de Zona (Prefijo Z-XX)</label>
               <input
                 id="codigo-input"
                 type="text"
                 name="codigo"
-                placeholder="Ej. Z-07"
+                placeholder="Ej. Z-09"
                 value={formData.codigo}
                 onChange={handleInputChange}
-                disabled={isEditing} // No editable al actualizar
+                disabled={isEditing}
                 aria-invalid={formErrors.codigo ? "true" : "false"}
                 aria-describedby={formErrors.codigo ? "codigo-error" : undefined}
               />
@@ -314,9 +650,8 @@ const MaterialesList = () => {
               )}
             </div>
 
-            {/* Campo 3: Estado / Intensidad (Dropdown) */}
             <div className="form-group">
-              <label htmlFor="estado-select">Estado de Tránsito (Escala Térmica)</label>
+              <label htmlFor="estado-select">Nivel de Tráfico (Intensidad)</label>
               <select
                 id="estado-select"
                 name="estado"
@@ -329,7 +664,6 @@ const MaterialesList = () => {
               </select>
             </div>
 
-            {/* Campo 4: Cantidad (Flujo) */}
             <div className={`form-group ${formErrors.cantidad ? 'invalid' : ''}`}>
               <label htmlFor="cantidad-input">Flujo de Tránsito (Clientes / Hora)</label>
               <input
@@ -347,9 +681,8 @@ const MaterialesList = () => {
               )}
             </div>
 
-            {/* Campo 5: URL de Imagen */}
             <div className={`form-group ${formErrors.imagen ? 'invalid' : ''}`}>
-              <label htmlFor="imagen-input">URL de la Imagen Ilustrativa</label>
+              <label htmlFor="imagen-input">URL de la Imagen del Departamento</label>
               <input
                 id="imagen-input"
                 type="text"
@@ -365,7 +698,6 @@ const MaterialesList = () => {
               )}
             </div>
 
-            {/* Botones de acción */}
             <div className="form-actions">
               <button type="submit" className="btn-submit">
                 {isEditing ? 'Guardar Cambios' : 'Registrar Zona'}
@@ -378,21 +710,18 @@ const MaterialesList = () => {
           </form>
         </div>
 
-        {/* Panel Informativo de Instrucciones */}
+        {/* Guía Administrativa */}
         <div className="admin-info">
-          <h3>Guía Administrativa</h3>
+          <h3>Optimización de Distribución</h3>
           <p>
-            El registro de zonas es fundamental para que el mapa de calor central se actualice de forma dinámica. 
-            El algoritmo clasifica las zonas automáticamente:
+            Al registrar una zona o editar su afluencia, los hotspots interactivos del plano superior 
+            se re-calcularán de manera reactiva e instantánea usando la tecnología del estado local de React.
           </p>
           <ul className="rules-list">
-            <li><strong>Zonas Calientes (Rojo)</strong>: Espacios con flujo superior a 150 clientes/hora. Ideales para colocar promociones o productos de alto margen.</li>
-            <li><strong>Zonas Templadas (Naranja)</strong>: Flujo entre 70 y 150 clientes/hora. Pasillos de tránsito normal.</li>
-            <li><strong>Zonas Frías (Azul)</strong>: Flujo menor a 70 clientes/hora. Zonas críticas que requieren rediseño del layout o colocación de productos gancho.</li>
+            <li><strong>Zonas Calientes (&gt;140 pers/h)</strong>: Indicadas en color rojo brillante. Concentran las compras impulsivas.</li>
+            <li><strong>Zonas Templadas (70-140 pers/h)</strong>: Indicadas en color naranja/amarillo. Tráfico constante de abastecimiento.</li>
+            <li><strong>Zonas Frías (&lt;70 pers/h)</strong>: Indicadas en color azul/celeste. Pasillos de bajo impacto que requieren optimización del surtido.</li>
           </ul>
-          <p style={{ marginTop: '1.5rem', fontSize: '0.85rem', opacity: 0.6 }}>
-            * Nota: Los datos almacenados son locales e interactivos dentro del estado de React (useState).
-          </p>
         </div>
 
       </div>

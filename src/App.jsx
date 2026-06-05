@@ -27,6 +27,12 @@ function App() {
           <Routes>
             <Route path="/" element={<Homepage />} />
             <Route path="/materiales" element={<MaterialesList />} />
+            <Route path="/trafico" element={<Homepage />} />
+            <Route path="/zonas" element={<MaterialesList />} />
+            <Route path="/reportes" element={<Homepage />} />
+            <Route path="/alertas" element={<Homepage />} />
+            <Route path="/comparaciones" element={<MaterialesList />} />
+            <Route path="/configuracion" element={<Homepage />} />
             <Route path="/materiales/:id" element={<MaterialDetail />} />
             <Route path="/contacto" element={<Contacto />} />
             <Route path="*" element={
