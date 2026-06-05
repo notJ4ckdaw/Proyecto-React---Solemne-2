@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -14,19 +14,21 @@ import Contacto from './pages/Contacto';
 import './index.scss';
 
 function App() {
+  // 1. Crear el estado de la tienda seleccionada
+  const [tiendaActiva, setTiendaActiva] = useState('Jumbo Costanera Center');
+
   return (
     <Router>
       <div className="app-container">
-        {/* Componentes estructurales de Layout (CSS Grid) */}
         <Header />
         
-        <Sidebar />
+        {/* 2. Pasar el estado y la función para actualizarlo al Sidebar */}
+        <Sidebar tiendaActiva={tiendaActiva} setTiendaActiva={setTiendaActiva} />
         
         <main className="app-main">
-          {/* Configuración de Rutas de la Aplicación (RF-04) */}
           <Routes>
             <Route path="/" element={<Homepage />} />
-            <Route path="/materiales" element={<MaterialesList />} />
+            <Route path="/materiales" element={<MaterialesList tiendaActiva={tiendaActiva} />} />
             <Route path="/trafico" element={<Homepage />} />
             <Route path="/zonas" element={<MaterialesList />} />
             <Route path="/reportes" element={<Homepage />} />
