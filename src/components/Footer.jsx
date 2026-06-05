@@ -4,10 +4,10 @@ const Footer = () => {
   return (
     <footer className="app-footer">
       <div>
-        <strong>VCM HeatMap</strong> &copy; {new Date().getFullYear()} - Sistema de Vinculación con el Medio
+        <strong>Jumbo Cencosud</strong> &copy; {new Date().getFullYear()} - Sistema de Vinculación con el Medio
       </div>
       <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-        Desarrollado para la Evaluación Solemne 2 | Supermercado Inteligente
+        Desarrollado para la Evaluación Solemne 2 | Jumbo Cencosud - VCM
       </div>
     </footer>
   );

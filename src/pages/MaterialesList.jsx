@@ -39,7 +39,7 @@ const MaterialesList = () => {
 
   // Cambiar el título del documento al cargar
   useEffect(() => {
-    document.title = 'VCM HeatMap - Zonas';
+    document.title = 'Jumbo Cencosud - Zonas';
   }, []);
 
   // 3. Manejo de inputs del formulario

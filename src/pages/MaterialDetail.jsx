@@ -12,9 +12,9 @@ const MaterialDetail = () => {
   // Cambiar el título del documento dinámicamente en base a la zona (Hook Obligatorio 4.2)
   useEffect(() => {
     if (zona) {
-      document.title = `VCM HeatMap - Detalle ${zona.nombre}`;
+      document.title = `Jumbo Cencosud - Detalle ${zona.nombre}`;
     } else {
-      document.title = 'VCM HeatMap - Zona no encontrada';
+      document.title = 'Jumbo Cencosud - Zona no encontrada';
     }
   }, [zona]);
 

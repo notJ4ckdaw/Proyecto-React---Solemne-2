@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 const Homepage = () => {
   // useEffect para cambio de título de la página (Hook Obligatorio de Rúbrica 4.2)
   useEffect(() => {
-    document.title = 'VCM HeatMap - Inicio';
+    document.title = 'Jumbo Cencosud - Inicio';
   }, []);
 
   return (
@@ -12,10 +12,10 @@ const Homepage = () => {
       {/* Banner de Bienvenida */}
       <div className="welcome-banner">
         <div className="banner-content">
-          <h1>Sistema de Mapa de Calor <span>VCM HeatMap</span></h1>
+          <h1>Sistema de Mapa de Calor <span>Jumbo Cencosud</span></h1>
           <p>
             Una iniciativa de Vinculación con el Medio (VCM) que conecta analítica de datos de la escuela 
-            de ingeniería con comercios y pymes de la comunidad. Permite mapear y entender de forma objetiva 
+            de ingeniería con Jumbo (Cencosud) de la comunidad local. Permite mapear y entender de forma objetiva 
             los patrones de circulación de clientes dentro del supermercado para optimizar el layout, 
             mejorar las operaciones y eliminar las "zonas frías" de baja afluencia.
           </p>

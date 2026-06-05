@@ -4,12 +4,12 @@ const Header = () => {
   return (
     <header className="app-header">
       <div className="header-info">
-        <h1 className="sr-only">VCM HeatMap - Panel de Monitoreo</h1>
+        <h1 className="sr-only">Jumbo Cencosud - Panel de Monitoreo</h1>
         <p style={{ margin: 0, fontWeight: 700, fontSize: '1.2rem', color: '#0f172a' }}>
           Mapa de Calor
         </p>
         <span style={{ fontSize: '0.85rem', color: '#475569' }}>
-          Visualiza el mapa en base a la concentración de clientes y el flujo en el supermercado
+          Visualiza el mapa en base a la concentración de clientes y el flujo en Jumbo Cencosud
         </span>
       </div>
       

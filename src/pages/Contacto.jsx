@@ -15,7 +15,7 @@ const Contacto = () => {
 
   // Cambiar el título de la página (Hook Obligatorio 4.2)
   useEffect(() => {
-    document.title = 'VCM HeatMap - Contacto';
+    document.title = 'Jumbo Cencosud - Contacto';
   }, []);
 
   // 2. Manejo de inputs del formulario
@@ -131,7 +131,7 @@ const Contacto = () => {
               id="contacto-correo"
               type="email"
               name="correo"
-              placeholder="anagomez@supermercado.cl"
+              placeholder="anagomez@jumbo.cl"
               value={formData.correo}
               onChange={handleInputChange}
               aria-required="true"

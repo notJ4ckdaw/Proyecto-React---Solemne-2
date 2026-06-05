@@ -16,7 +16,7 @@ const Sidebar = () => {
         {/* Nombre del Supermercado */}
         <div className="brand" style={{ marginBottom: '2rem', textAlign: 'center' }}>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.025em', color: '#ffffff' }}>
-            🛒 VCM Supermarket
+            🛒 Jumbo (Cencosud)
           </h2>
           <span style={{ fontSize: '0.75rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Monitoreo de Flujo
