@@ -1,6 +1,13 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 
 const Header = () => {
+  const topLinks = [
+    { label: 'Inicio', path: '/' },
+    { label: 'Mapa de Calor', path: '/materiales' },
+    { label: 'Contacto', path: '/contacto' }
+  ];
+
   return (
     <header className="app-header">
       <div className="header-info">
@@ -12,6 +19,22 @@ const Header = () => {
           Visualiza el mapa en base a la concentración de clientes y el flujo en Jumbo Cencosud
         </span>
       </div>
+
+      {/* Menú de navegación horizontal de cabecera (Cumple Flexbox 3.2 y RNF-03) */}
+      <nav className="header-nav" aria-label="Navegación horizontal de cabecera">
+        <ul className="header-nav-list">
+          {topLinks.map((link, idx) => (
+            <li key={idx}>
+              <NavLink 
+                to={link.path}
+                className={({ isActive }) => `header-nav-link ${isActive ? 'active' : ''}`}
+              >
+                {link.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
       
       <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <div style={{

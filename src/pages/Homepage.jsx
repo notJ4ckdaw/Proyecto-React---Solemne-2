@@ -33,27 +33,27 @@ const Homepage = () => {
       
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-label">Visitantes Totales</div>
-          <div className="metric-value">20.123</div>
-          <div className="metric-sub positive">📈 +12,4% vs. Semana anterior</div>
+          <div className="metric-label">Total de Zonas Monitoreadas</div>
+          <div className="metric-value">8 Sectores</div>
+          <div className="metric-sub positive">🟢 100% de los sensores activos</div>
         </div>
         
+        <div className="metric-card">
+          <div className="metric-label">Zonas en Estado Crítico</div>
+          <div className="metric-value">4 Calientes</div>
+          <div className="metric-sub negative">🔥 Flujo superior a 140 pers/h</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-label">Último Ingreso / Registro</div>
+          <div className="metric-value" style={{ fontSize: '1.4rem', padding: '0.2rem 0' }}>Caja / Checkout</div>
+          <div className="metric-sub positive">⚡ Hace 15 minutos (Z-06)</div>
+        </div>
+
         <div className="metric-card">
           <div className="metric-label">Tiempo Promedio en Tienda</div>
           <div className="metric-value">36:45 min</div>
           <div className="metric-sub positive">📈 +8,3% vs. Semana anterior</div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-label">Zona con Más Tráfico</div>
-          <div className="metric-value" style={{ fontSize: '1.4rem', padding: '0.2rem 0' }}>Entrada/Salida</div>
-          <div className="metric-sub positive">🔥 25% del tráfico total</div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-label">Zona con Menos Tráfico</div>
-          <div className="metric-value" style={{ fontSize: '1.4rem', padding: '0.2rem 0' }}>Lácteos</div>
-          <div className="metric-sub negative">❄️ 4,2% del tráfico total</div>
         </div>
       </div>
 

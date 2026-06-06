@@ -65,6 +65,44 @@
 }
 
 // ------------------------------------------
+// 1b. HeaderNav (Menú de Cabecera Horizontal para Rúbrica)
+// ------------------------------------------
+.header-nav {
+  display: block;
+
+  @include respond-to-mobile {
+    display: none; // Ocultar en móvil para mantener la interfaz limpia
+  }
+
+  .header-nav-list {
+    display: flex;
+    gap: $spacing-md;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .header-nav-link {
+    color: $color-text-muted;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    transition: $transition-fast;
+    border-bottom: 2px solid transparent;
+    padding-bottom: 4px;
+
+    &:hover {
+      color: $color-primary;
+    }
+
+    &.active {
+      color: $color-primary;
+      border-bottom-color: $color-primary;
+    }
+  }
+}
+
+// ------------------------------------------
 // 2. MaterialCard (Tarjeta de Zona)
 // ------------------------------------------
 .material-card {

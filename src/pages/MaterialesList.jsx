@@ -370,7 +370,7 @@ const MaterialesList = ({ tiendaActiva }) => {
               {/* PANADERÍA */}
               <g opacity="0.8">
                 <rect x="200" y="390" width="100" height="35" rx="4" fill="#fef3c7" stroke="#f59e0b" strokeWidth="1.5" />
-                <rect x="200" y="435" width="60" height="25" rx="3" fill="#fffbeb" stroke="#fde68a" stroke="1" />
+                <rect x="200" y="435" width="60" height="25" rx="3" fill="#fffbeb" stroke="#fde68a" strokeWidth="1" />
                 <text x="215" y="380" fontSize="9" fontWeight="bold" fill="#ea580c">PANADERÍA</text>
               </g>
 
