@@ -6,6 +6,7 @@ const Contacto = () => {
   const [formData, setFormData] = useState({
     nombre: '',
     correo: '',
+    telefono: '',
     asunto: '',
     mensaje: ''
   });
@@ -80,6 +81,7 @@ const Contacto = () => {
     setFormData({
       nombre: '',
       correo: '',
+      telefono: '',
       asunto: '',
       mensaje: ''
     });
@@ -141,6 +143,20 @@ const Contacto = () => {
             {formErrors.correo && (
               <span id="correo-error" className="error-msg">{formErrors.correo}</span>
             )}
+          </div>
+
+          {/* Campo Teléfono (opcional) */}
+          <div className={`form-group`}>
+            <label htmlFor="contacto-telefono">Teléfono (opcional)</label>
+            <input
+              id="contacto-telefono"
+              type="tel"
+              name="telefono"
+              placeholder="Ej. +56912345678"
+              value={formData.telefono}
+              onChange={handleInputChange}
+              aria-required="false"
+            />
           </div>
 
           {/* Campo Asunto */}
