@@ -38,7 +38,7 @@ const MaterialCard = ({ id, nombre, codigo, estado, cantidad, imagen }) => {
 
       <div className="card-actions">
         <Link 
-          to={`/materiales/${id}`} 
+          to={`/materiales/${codigo}`} 
           className="btn-detail"
           aria-label={`Ver análisis de flujo detallado para la zona ${nombre}`}
         >

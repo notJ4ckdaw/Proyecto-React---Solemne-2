@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
@@ -9,32 +9,56 @@ import Homepage from './pages/Homepage';
 import MaterialesList from './pages/MaterialesList';
 import MaterialDetail from './pages/MaterialDetail';
 import Contacto from './pages/Contacto';
+import Login from './pages/Login';
+import Trafico from './pages/Trafico';
+import Reportes from './pages/Reportes';
+import Alertas from './pages/Alertas';
+import Configuracion from './pages/Configuracion';
 
-// Estilos globales integrados (SASS index.scss)
+// Contexto
+import { AuthProvider, useAuth } from './context/AuthContext';
+
+// Estilos globales
 import './index.scss';
 
-function App() {
-  // 1. Crear el estado de la tienda seleccionada
-  const [tiendaActiva, setTiendaActiva] = useState('Jumbo Costanera Center');
+// Componente para proteger rutas privadas
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0f172a', color: '#ffffff' }}>
+        <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Cargando sesión...</h3>
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
+};
 
+// Componente de Layout protegido
+const AppLayout = () => {
   return (
-    <Router>
+    <ProtectedRoute>
       <div className="app-container">
         <Header />
         
-        {/* 2. Pasar el estado y la función para actualizarlo al Sidebar */}
-        <Sidebar tiendaActiva={tiendaActiva} setTiendaActiva={setTiendaActiva} />
+        <Sidebar />
         
         <main className="app-main">
           <Routes>
             <Route path="/" element={<Homepage />} />
-            <Route path="/materiales" element={<MaterialesList tiendaActiva={tiendaActiva} />} />
-            <Route path="/trafico" element={<Homepage />} />
+            <Route path="/materiales" element={<MaterialesList />} />
+            <Route path="/trafico" element={<Trafico />} />
             <Route path="/zonas" element={<MaterialesList />} />
-            <Route path="/reportes" element={<Homepage />} />
-            <Route path="/alertas" element={<Homepage />} />
+            <Route path="/reportes" element={<Reportes />} />
+            <Route path="/alertas" element={<Alertas />} />
             <Route path="/comparaciones" element={<MaterialesList />} />
-            <Route path="/configuracion" element={<Homepage />} />
+            <Route path="/configuracion" element={<Configuracion />} />
             <Route path="/materiales/:id" element={<MaterialDetail />} />
             <Route path="/contacto" element={<Contacto />} />
             <Route path="*" element={
@@ -48,7 +72,23 @@ function App() {
         
         <Footer />
       </div>
-    </Router>
+    </ProtectedRoute>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Ruta pública de Login */}
+          <Route path="/login" element={<Login />} />
+          
+          {/* Rutas privadas bajo el layout */}
+          <Route path="/*" element={<AppLayout />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

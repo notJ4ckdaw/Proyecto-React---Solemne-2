@@ -1,11 +1,49 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { FALLBACK_ZONAS } from '../data/fallbackData';
 
 const Homepage = () => {
-  // useEffect para cambio de título de la página (Hook Obligatorio de Rúbrica 4.2)
+  const { selectedLocal } = useAuth();
+  const [stats, setStats] = useState({
+    total: 8,
+    criticas: 3,
+    maxZona: 'Cajas Rápidas'
+  });
+
+  // useEffect para cambio de título de la página y cargar estadísticas (Hook Obligatorio de Rúbrica 4.2)
   useEffect(() => {
     document.title = 'Jumbo Cencosud - Inicio';
-  }, []);
+
+    const loadStats = (data) => {
+      if (Array.isArray(data)) {
+        const hotCount = data.filter(z => z.estado === 'caliente').length;
+        const maxFlowZone = [...data].sort((a, b) => b.cantidad - a.cantidad)[0];
+        
+        setStats({
+          total: data.length,
+          criticas: hotCount,
+          maxZona: maxFlowZone ? maxFlowZone.nombre : 'Sectores'
+        });
+      }
+    };
+
+    fetch(`http://localhost:3001/api/zonas/${selectedLocal}`)
+      .then((res) => res.json())
+      .then((data) => {
+        loadStats(data);
+        localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(data));
+      })
+      .catch((err) => {
+        console.warn('Servidor offline. Cargando estadísticas desde caché local:', err);
+        const localStoredZones = localStorage.getItem(`jumbo_heatmap_zonas_${selectedLocal}`);
+        if (localStoredZones) {
+          loadStats(JSON.parse(localStoredZones));
+        } else {
+          loadStats(FALLBACK_ZONAS[selectedLocal] || []);
+        }
+      });
+  }, [selectedLocal]);
 
   return (
     <section className="page-home">
@@ -34,20 +72,20 @@ const Homepage = () => {
       <div className="metrics-grid">
         <div className="metric-card">
           <div className="metric-label">Total de Zonas Monitoreadas</div>
-          <div className="metric-value">8 Sectores</div>
+          <div className="metric-value">{stats.total} Sectores</div>
           <div className="metric-sub positive">🟢 100% de los sensores activos</div>
         </div>
         
         <div className="metric-card">
           <div className="metric-label">Zonas en Estado Crítico</div>
-          <div className="metric-value">4 Calientes</div>
+          <div className="metric-value">{stats.criticas} Calientes</div>
           <div className="metric-sub negative">🔥 Flujo superior a 140 pers/h</div>
         </div>
 
         <div className="metric-card">
-          <div className="metric-label">Último Ingreso / Registro</div>
-          <div className="metric-value" style={{ fontSize: '1.4rem', padding: '0.2rem 0' }}>Caja / Checkout</div>
-          <div className="metric-sub positive">⚡ Hace 15 minutos (Z-06)</div>
+          <div className="metric-label">Mayor Flujo / Tránsito</div>
+          <div className="metric-value" style={{ fontSize: '1.25rem', padding: '0.35rem 0', fontWeight: 'bold' }}>{stats.maxZona}</div>
+          <div className="metric-sub positive">⚡ Sector más concurrido</div>
         </div>
 
         <div className="metric-card">

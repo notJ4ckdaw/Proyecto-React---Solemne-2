@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { inicialMateriales } from '../data/materiales';
 import MaterialCard from '../components/MaterialCard';
 import Mensaje from '../components/Mensaje';
+import { useAuth } from '../context/AuthContext';
+import { FALLBACK_ZONAS } from '../data/fallbackData';
 
-const MaterialesList = ({ tiendaActiva }) => {
+const MaterialesList = () => {
+  const { selectedLocal } = useAuth();
+  
+  const localesMap = {
+    'L-01': 'Jumbo Costanera Center',
+    'L-02': 'Jumbo Alto Las Condes',
+    'L-03': 'Jumbo El Llano'
+  };
+  const tiendaActiva = localesMap[selectedLocal] || '';
+  
   // 1. Estados principales (RF-05, RNF-04)
-  const [materiales, setMateriales] = useState(inicialMateriales);
+  const [materiales, setMateriales] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredMateriales, setFilteredMateriales] = useState(inicialMateriales);
+  const [filteredMateriales, setFilteredMateriales] = useState([]);
   const [hoveredZoneId, setHoveredZoneId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Estados del Formulario (Hook Obligatorio 4.2)
   const [formData, setFormData] = useState({
@@ -26,40 +37,36 @@ const MaterialesList = ({ tiendaActiva }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
-  // 2. useEffect para aleatorizar datos cuando cambia la tiendaActiva
+  // 2. Cargar zonas desde la API cuando cambia el local seleccionado
   useEffect(() => {
-    // Mapeamos los datos base y generamos números nuevos para la sucursal
-    const datosAleatorios = inicialMateriales.map(zona => {
-      // Número aleatorio entre 10 y 250 personas
-      const afluenciaRandom = Math.floor(Math.random() * 240) + 10;
-      
-      // Recalcular las reglas de negocio (Frío, Templado, Caliente)
-      let nuevoEstado = "frio";
-      let nuevoColor = "lightblue";
-      let nuevoHex = "#38bdf8";
-
-      if (afluenciaRandom > 140) {
-        nuevoEstado = "caliente";
-        nuevoColor = "red";
-        nuevoHex = "#dc2626";
-      } else if (afluenciaRandom >= 70) {
-        nuevoEstado = "templado";
-        nuevoColor = "orange";
-        nuevoHex = "#f97316";
-      }
-
-      // Retornar la zona con sus datos alterados
-      return {
-        ...zona,
-        cantidad: afluenciaRandom,
-        estado: nuevoEstado,
-        color: nuevoColor,
-        colorHex: nuevoHex
-      };
-    });
-
-    setMateriales(datosAleatorios);
-  }, [tiendaActiva]);
+    setLoading(true);
+    const localStoredZones = localStorage.getItem(`jumbo_heatmap_zonas_${selectedLocal}`);
+    
+    fetch(`http://localhost:3001/api/zonas/${selectedLocal}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setMateriales(data);
+          setFilteredMateriales(data);
+          localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(data));
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.warn('Servidor backend offline. Cargando base de datos local offline:', err);
+        if (localStoredZones) {
+          const parsed = JSON.parse(localStoredZones);
+          setMateriales(parsed);
+          setFilteredMateriales(parsed);
+        } else {
+          const defaultZones = FALLBACK_ZONAS[selectedLocal] || [];
+          setMateriales(defaultZones);
+          setFilteredMateriales(defaultZones);
+          localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(defaultZones));
+        }
+        setLoading(false);
+      });
+  }, [selectedLocal]);
 
   // 3. useEffect para filtrado reactivo de la lista de zonas (Hook Obligatorio 4.2)
   useEffect(() => {
@@ -76,8 +83,8 @@ const MaterialesList = ({ tiendaActiva }) => {
 
   // Cambiar el título del documento al cargar
   useEffect(() => {
-    document.title = `Jumbo Cencosud - ${tiendaActiva ? tiendaActiva : 'Mapa de Calor'}`;
-  }, [tiendaActiva]);
+    document.title = `Jumbo Cencosud - Mapa de Calor`;
+  }, []);
 
   // 4. Manejo de inputs del formulario
   const handleInputChange = (e) => {
@@ -115,7 +122,7 @@ const MaterialesList = ({ tiendaActiva }) => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -126,34 +133,98 @@ const MaterialesList = ({ tiendaActiva }) => {
       return;
     }
 
-    if (isEditing) {
-      // Modificación de zona existente
-      setMateriales(prev => prev.map(m => m.id === formData.id ? { ...formData, codigo: formData.codigo.toUpperCase() } : m));
+    try {
+      const response = await fetch(`http://localhost:3001/api/zonas/${selectedLocal}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al guardar la zona');
+      }
+
+      // Volver a cargar la lista de zonas desde el servidor para sincronizar
+      const res = await fetch(`http://localhost:3001/api/zonas/${selectedLocal}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setMateriales(data);
+        localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(data));
+      }
+
       setMensaje({
         tipo: 'exito',
-        texto: `¡Zona ${formData.nombre} actualizada correctamente!`
+        texto: isEditing 
+          ? `¡Zona ${formData.nombre} actualizada correctamente!`
+          : `¡Zona ${formData.nombre} registrada correctamente en el sistema!`
       });
-    } else {
-      // Registro de nueva zona
-      const nuevaZona = {
+
+      handleReset();
+    } catch (error) {
+      console.warn('Conexión con backend fallida. Registrando cambios en base de datos local (Offline)...', error);
+      
+      const updatedZones = [...materiales];
+      const existingZoneIndex = updatedZones.findIndex((z) => z.codigo === formData.codigo);
+      
+      // Calcular estado y colores en base a afluencia
+      const qty = parseInt(formData.cantidad, 10) || 0;
+      let computedStatus = 'frio';
+      let colorHex = '#38bdf8';
+      let colorClass = 'cold';
+      
+      if (qty >= 140) {
+        computedStatus = 'caliente';
+        colorHex = '#ef4444';
+        colorClass = 'hot';
+      } else if (qty >= 70) {
+        computedStatus = 'templado';
+        colorHex = '#f59e0b';
+        colorClass = 'warm';
+      }
+
+      const newOrUpdatedZone = {
         ...formData,
-        id: materiales.length > 0 ? Math.max(...materiales.map(m => m.id)) + 1 : 1,
-        codigo: formData.codigo.toUpperCase(),
-        color: formData.estado === 'caliente' ? 'red' : formData.estado === 'templado' ? 'orange' : 'lightblue',
-        colorHex: formData.estado === 'caliente' ? '#dc2626' : formData.estado === 'templado' ? '#f97316' : '#38bdf8',
-        x: "50%",
-        y: "50%"
+        estado: computedStatus,
+        colorHex,
+        color: colorClass
       };
-      setMateriales(prev => [...prev, nuevaZona]);
+
+      if (existingZoneIndex !== -1) {
+        updatedZones[existingZoneIndex] = {
+          ...updatedZones[existingZoneIndex],
+          ...newOrUpdatedZone
+        };
+      } else {
+        updatedZones.push({
+          id: formData.codigo,
+          cx: "500",
+          cy: "300",
+          x: "500",
+          y: "300",
+          xPill: "440",
+          yPill: "285",
+          aforoMax: 150,
+          ...newOrUpdatedZone
+        });
+      }
+
+      setMateriales(updatedZones);
+      localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(updatedZones));
+
       setMensaje({
         tipo: 'exito',
-        texto: `¡Zona ${formData.nombre} registrada correctamente en el sistema!`
+        texto: isEditing 
+          ? `[Modo Local] ¡Zona ${formData.nombre} actualizada correctamente en caché!`
+          : `[Modo Local] ¡Zona ${formData.nombre} registrada en caché!`
       });
+
+      handleReset();
     }
 
-    // Resetear formulario
-    handleReset();
-    
     // Ocultar mensaje automáticamente después de 4 segundos
     setTimeout(() => setMensaje({ tipo: '', texto: '' }), 4000);
   };
@@ -182,6 +253,15 @@ const MaterialesList = ({ tiendaActiva }) => {
     setFormErrors({});
     setIsEditing(false);
   };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', flexDirection: 'column', gap: '1rem' }}>
+        <h3 style={{ color: '#008751', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Cargando mapa de calor...</h3>
+        <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Conectando con el servidor de Cencosud</p>
+      </div>
+    );
+  }
 
   return (
     <section className="page-zones">

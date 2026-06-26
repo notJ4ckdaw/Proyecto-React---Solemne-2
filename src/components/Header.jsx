@@ -58,7 +58,7 @@ const Header = () => {
           cursor: 'pointer',
           transition: 'all 0.2s'
         }}
-        onClick={() => alert("Función de filtros estáticos (Solemne 2 - Datos locales)")}
+        onClick={() => alert("Filtros de Sensores: Todos los tránsitos y pasillos están visibles en el mapa.")}
         title="Filtrar datos del mapa"
         type="button">
           Filtros

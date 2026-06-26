@@ -1,29 +1,70 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { inicialMateriales } from '../data/materiales';
+import { useAuth } from '../context/AuthContext';
+import { FALLBACK_ZONAS } from '../data/fallbackData';
 
 const MaterialDetail = () => {
   // useParams para obtener el ID de la ruta (Hook Obligatorio 4.2)
   const { id } = useParams();
+  const { selectedLocal } = useAuth();
   
-  // Buscar la zona correspondiente en los datos estáticos
-  const zona = inicialMateriales.find(m => m.id === parseInt(id));
+  const [zona, setZona] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Buscar la zona correspondiente en la API del backend
+  useEffect(() => {
+    setLoading(true);
+    
+    const findAndSetZone = (data) => {
+      if (Array.isArray(data)) {
+        const foundZone = data.find(m => m.codigo === id);
+        setZona(foundZone || null);
+      }
+    };
+
+    fetch(`http://localhost:3001/api/zonas/${selectedLocal}`)
+      .then((res) => res.json())
+      .then((data) => {
+        findAndSetZone(data);
+        localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(data));
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.warn('Servidor offline. Cargando detalle de zona desde caché local:', err);
+        const localStoredZones = localStorage.getItem(`jumbo_heatmap_zonas_${selectedLocal}`);
+        if (localStoredZones) {
+          findAndSetZone(JSON.parse(localStoredZones));
+        } else {
+          findAndSetZone(FALLBACK_ZONAS[selectedLocal] || []);
+        }
+        setLoading(false);
+      });
+  }, [id, selectedLocal]);
 
   // Cambiar el título del documento dinámicamente en base a la zona (Hook Obligatorio 4.2)
   useEffect(() => {
     if (zona) {
       document.title = `Jumbo Cencosud - Detalle ${zona.nombre}`;
-    } else {
+    } else if (!loading) {
       document.title = 'Jumbo Cencosud - Zona no encontrada';
     }
-  }, [zona]);
+  }, [zona, loading]);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', flexDirection: 'column', gap: '1rem' }}>
+        <h3 style={{ color: '#008751', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Cargando análisis de la zona...</h3>
+        <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Conectando con el servidor de Cencosud</p>
+      </div>
+    );
+  }
 
   if (!zona) {
     return (
       <section style={{ textAlign: 'center', padding: '3rem 1rem' }}>
         <h2>⚠️ Departamento no encontrado</h2>
-        <p style={{ margin: '1rem 0', color: '#64748b' }}>El identificador de la zona no coincide con nuestros registros locales.</p>
-        <Link to="/materiales" className="btn-submit" style={{ textDecoration: 'none', display: 'inline-block', width: 'auto' }}>
+        <p style={{ margin: '1rem 0', color: '#64748b' }}>El identificador de la zona no coincide con nuestros registros locales de la sucursal activa.</p>
+        <Link to="/materiales" className="btn-submit" style={{ textDecoration: 'none', display: 'inline-block', width: 'auto', backgroundColor: '#008751', color: 'white', padding: '10px 20px', borderRadius: '6px' }}>
           Volver a Zonas
         </Link>
       </section>

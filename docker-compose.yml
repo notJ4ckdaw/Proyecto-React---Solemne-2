@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # Servidor API Express (Backend)
+  backend:
+    build: ./backend
+    container_name: jumbo_heatmap_backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend/db.json:/app/db.json
+    restart: always
+
+  # Servidor React + Nginx (Frontend)
+  frontend:
+    build: .
+    container_name: jumbo_heatmap_frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: always
