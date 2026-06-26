@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedLocal, setSelectedLocal] = useState('L-01');
+  const [selectedFloor, setSelectedFloor] = useState('1');
 
   // Load session from localStorage on initial render
   useEffect(() => {
@@ -83,6 +84,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const changeFloor = (floorId) => {
+    setSelectedFloor(floorId);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -91,6 +96,8 @@ export const AuthProvider = ({ children }) => {
         loading,
         selectedLocal,
         changeLocal,
+        selectedFloor,
+        changeFloor,
         login,
         logout,
       }}

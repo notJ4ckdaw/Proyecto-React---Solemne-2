@@ -14,6 +14,7 @@ import Trafico from './pages/Trafico';
 import Reportes from './pages/Reportes';
 import Alertas from './pages/Alertas';
 import Configuracion from './pages/Configuracion';
+import Comparaciones from './pages/Comparaciones';
 
 // Contexto
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -57,7 +58,7 @@ const AppLayout = () => {
             <Route path="/zonas" element={<MaterialesList />} />
             <Route path="/reportes" element={<Reportes />} />
             <Route path="/alertas" element={<Alertas />} />
-            <Route path="/comparaciones" element={<MaterialesList />} />
+            <Route path="/comparaciones" element={<Comparaciones />} />
             <Route path="/configuracion" element={<Configuracion />} />
             <Route path="/materiales/:id" element={<MaterialDetail />} />
             <Route path="/contacto" element={<Contacto />} />

@@ -6,7 +6,7 @@ import { FALLBACK_ZONAS } from '../data/fallbackData';
 const MaterialDetail = () => {
   // useParams para obtener el ID de la ruta (Hook Obligatorio 4.2)
   const { id } = useParams();
-  const { selectedLocal } = useAuth();
+  const { selectedLocal, selectedFloor } = useAuth();
   
   const [zona, setZona] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,7 +17,7 @@ const MaterialDetail = () => {
     
     const findAndSetZone = (data) => {
       if (Array.isArray(data)) {
-        const foundZone = data.find(m => m.codigo === id);
+        const foundZone = data.find(m => m.codigo === id && (m.piso || "1") === selectedFloor);
         setZona(foundZone || null);
       }
     };
@@ -39,7 +39,7 @@ const MaterialDetail = () => {
         }
         setLoading(false);
       });
-  }, [id, selectedLocal]);
+  }, [id, selectedLocal, selectedFloor]);
 
   // Cambiar el título del documento dinámicamente en base a la zona (Hook Obligatorio 4.2)
   useEffect(() => {

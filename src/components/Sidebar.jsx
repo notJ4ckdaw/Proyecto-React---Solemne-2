@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { FALLBACK_LOCALES } from '../data/fallbackData';
 
 const Sidebar = () => {
-  const { user, selectedLocal, changeLocal, logout } = useAuth();
+  const { user, selectedLocal, changeLocal, selectedFloor, changeFloor, logout } = useAuth();
   const [locales, setLocales] = useState(FALLBACK_LOCALES);
 
   // Configuración de links para el MenuNav
@@ -124,22 +124,26 @@ const Sidebar = () => {
             <div className="floor-title" style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
               Piso Seleccionado
             </div>
-            <div style={{
-              width: '100%',
-              backgroundColor: '#007345',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: '#ffffff',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}>
-              <span>🟢 Piso 1 (Planta Baja)</span>
-            </div>
+            <select 
+              value={selectedFloor}
+              onChange={(e) => changeFloor(e.target.value)}
+              style={{
+                width: '100%',
+                backgroundColor: '#007345',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+            >
+              <option value="1" style={{ backgroundColor: '#0f172a', color: 'white' }}>🟢 Piso 1 (Planta Baja)</option>
+              <option value="2" style={{ backgroundColor: '#0f172a', color: 'white' }}>🔵 Piso 2 (Tecnología y Ropa)</option>
+              <option value="3" style={{ backgroundColor: '#0f172a', color: 'white' }}>🟡 Piso 3 (Hogar y Deportes)</option>
+            </select>
           </div>
 
         </div>

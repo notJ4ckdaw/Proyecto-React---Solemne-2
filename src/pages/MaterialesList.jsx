@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { FALLBACK_ZONAS } from '../data/fallbackData';
 
 const MaterialesList = () => {
-  const { selectedLocal } = useAuth();
+  const { selectedLocal, selectedFloor } = useAuth();
   
   const localesMap = {
     'L-01': 'Jumbo Costanera Center',
@@ -27,6 +27,7 @@ const MaterialesList = () => {
     id: '',
     nombre: '',
     codigo: '',
+    piso: selectedFloor,
     estado: 'caliente',
     cantidad: '',
     imagen: ''
@@ -37,17 +38,47 @@ const MaterialesList = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
-  // 2. Cargar zonas desde la API cuando cambia el local seleccionado
+  // 2. Cargar zonas desde la API cuando cambia el local o el piso seleccionado
   useEffect(() => {
     setLoading(true);
+
+    // Limpiar caché antiguo de localStorage si detecta el formato viejo (sin propiedad 'piso')
+    ['L-01', 'L-02', 'L-03'].forEach(locId => {
+      const key = `jumbo_heatmap_zonas_${locId}`;
+      const cached = localStorage.getItem(key);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          const tieneDatosIncorrectos = Array.isArray(parsed) && parsed.some(z => 
+            !z.piso || (z.imagen && (
+              z.imagen.includes('1542751371-adc38448a05e') || // Imagen de gamer en cajas
+              z.imagen.includes('1558036117') || // Cabaña de madera en escaleras mecánicas
+              z.imagen.includes('1551818255') || // Oficina/evento en escaleras mecánicas
+              z.imagen.includes('1519642918688') || // Escaleras rotas
+              z.imagen.includes('1515488042361') || // Ropa infantil rota
+              z.imagen.includes('1531244583151') || // Juguetes rotos
+              z.imagen.includes('1584622650111')    // Baño en electrohogar
+            ))
+          );
+          if (tieneDatosIncorrectos) {
+            console.log(`Limpiando caché desactualizado de zonas para ${locId}`);
+            localStorage.removeItem(key);
+          }
+        } catch (e) {
+          localStorage.removeItem(key);
+        }
+      }
+    });
+
     const localStoredZones = localStorage.getItem(`jumbo_heatmap_zonas_${selectedLocal}`);
     
     fetch(`http://localhost:3001/api/zonas/${selectedLocal}`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setMateriales(data);
-          setFilteredMateriales(data);
+          const floorZones = data.filter(z => (z.piso || "1") === selectedFloor);
+          setMateriales(floorZones);
+          setFilteredMateriales(floorZones);
           localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(data));
         }
         setLoading(false);
@@ -56,17 +87,39 @@ const MaterialesList = () => {
         console.warn('Servidor backend offline. Cargando base de datos local offline:', err);
         if (localStoredZones) {
           const parsed = JSON.parse(localStoredZones);
-          setMateriales(parsed);
-          setFilteredMateriales(parsed);
+          
+          // Verificar si el cache local tiene las imágenes incorrectas/rotas o desalineadas con el contexto
+          const tieneImagenesAntiguas = parsed.some(z => 
+            z.imagen && (
+              z.imagen.includes('1610348725531') || 
+              z.imagen.includes('1527061011665') || 
+              (z.codigo === 'Z-01' && z.imagen.includes('1542838132-92c53300491e')) || 
+              (z.codigo === 'Z-08' && !z.imagen.includes('1556742049-0cfed4f6a45d'))
+            )
+          );
+          
+          if (tieneImagenesAntiguas) {
+            console.log('Se detectó cache con imágenes desactualizadas. Limpiando cache...');
+            const defaultZones = FALLBACK_ZONAS[selectedLocal] || [];
+            const floorZones = defaultZones.filter(z => (z.piso || "1") === selectedFloor);
+            setMateriales(floorZones);
+            setFilteredMateriales(floorZones);
+            localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(defaultZones));
+          } else {
+            const floorZones = parsed.filter(z => (z.piso || "1") === selectedFloor);
+            setMateriales(floorZones);
+            setFilteredMateriales(floorZones);
+          }
         } else {
           const defaultZones = FALLBACK_ZONAS[selectedLocal] || [];
-          setMateriales(defaultZones);
-          setFilteredMateriales(defaultZones);
+          const floorZones = defaultZones.filter(z => (z.piso || "1") === selectedFloor);
+          setMateriales(floorZones);
+          setFilteredMateriales(floorZones);
           localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(defaultZones));
         }
         setLoading(false);
       });
-  }, [selectedLocal]);
+  }, [selectedLocal, selectedFloor]);
 
   // 3. useEffect para filtrado reactivo de la lista de zonas (Hook Obligatorio 4.2)
   useEffect(() => {
@@ -133,13 +186,18 @@ const MaterialesList = () => {
       return;
     }
 
+    const payload = {
+      ...formData,
+      piso: selectedFloor
+    };
+
     try {
       const response = await fetch(`http://localhost:3001/api/zonas/${selectedLocal}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       const result = await response.json();
@@ -152,7 +210,8 @@ const MaterialesList = () => {
       const res = await fetch(`http://localhost:3001/api/zonas/${selectedLocal}`);
       const data = await res.json();
       if (Array.isArray(data)) {
-        setMateriales(data);
+        const floorZones = data.filter(z => (z.piso || "1") === selectedFloor);
+        setMateriales(floorZones);
         localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(data));
       }
 
@@ -167,8 +226,17 @@ const MaterialesList = () => {
     } catch (error) {
       console.warn('Conexión con backend fallida. Registrando cambios en base de datos local (Offline)...', error);
       
-      const updatedZones = [...materiales];
-      const existingZoneIndex = updatedZones.findIndex((z) => z.codigo === formData.codigo);
+      let allCachedZones = [];
+      const localStoredZones = localStorage.getItem(`jumbo_heatmap_zonas_${selectedLocal}`);
+      if (localStoredZones) {
+        allCachedZones = JSON.parse(localStoredZones);
+      } else {
+        allCachedZones = FALLBACK_ZONAS[selectedLocal] || [];
+      }
+
+      const existingZoneIndex = allCachedZones.findIndex(
+        (z) => z.codigo === formData.codigo && (z.piso || "1") === selectedFloor
+      );
       
       // Calcular estado y colores en base a afluencia
       const qty = parseInt(formData.cantidad, 10) || 0;
@@ -187,20 +255,20 @@ const MaterialesList = () => {
       }
 
       const newOrUpdatedZone = {
-        ...formData,
+        ...payload,
         estado: computedStatus,
         colorHex,
         color: colorClass
       };
 
       if (existingZoneIndex !== -1) {
-        updatedZones[existingZoneIndex] = {
-          ...updatedZones[existingZoneIndex],
+        allCachedZones[existingZoneIndex] = {
+          ...allCachedZones[existingZoneIndex],
           ...newOrUpdatedZone
         };
       } else {
-        updatedZones.push({
-          id: formData.codigo,
+        allCachedZones.push({
+          id: `${formData.codigo}-P${selectedFloor}-${selectedLocal}`,
           cx: "500",
           cy: "300",
           x: "500",
@@ -212,8 +280,9 @@ const MaterialesList = () => {
         });
       }
 
-      setMateriales(updatedZones);
-      localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(updatedZones));
+      const floorZones = allCachedZones.filter(z => (z.piso || "1") === selectedFloor);
+      setMateriales(floorZones);
+      localStorage.setItem(`jumbo_heatmap_zonas_${selectedLocal}`, JSON.stringify(allCachedZones));
 
       setMensaje({
         tipo: 'exito',
@@ -246,6 +315,7 @@ const MaterialesList = () => {
       id: '',
       nombre: '',
       codigo: '',
+      piso: selectedFloor,
       estado: 'caliente',
       cantidad: '',
       imagen: ''
@@ -397,64 +467,174 @@ const MaterialesList = () => {
                 <line x1="85" y1="260" x2="85" y2="340" stroke="#3b82f6" strokeWidth="2" strokeDasharray="3 3" />
                 <path d="M 35 285 L 65 285 M 55 275 L 65 285 L 55 295" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 <path d="M 65 315 L 35 315 M 45 305 L 35 315 L 45 325" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <text x="30" y="340" fontSize="8" fontWeight="bold" fill="#3b82f6">ACCESO</text>
+                <text x="30" y="340" fontSize="8" fontWeight="bold" fill="#3b82f6">
+                  {selectedFloor === '1' ? 'ENTRADA / SALIDA' : selectedFloor === '2' ? 'ACCESO ESCALERAS' : 'ACCESO TERRAZA'}
+                </text>
               </g>
 
-              {/* FRUTAS Y VERDURAS */}
+              {/* FRUTAS Y VERDURAS / ELECTROHOGAR / TERRAZA */}
               <g opacity="0.8">
-                <rect x="200" y="80" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
-                <rect x="290" y="80" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
-                <rect x="200" y="140" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
-                <rect x="290" y="140" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
-                <circle cx="220" cy="100" r="6" fill="#ef4444" />
-                <circle cx="250" cy="100" r="6" fill="#eab308" />
-                <circle cx="310" cy="100" r="6" fill="#16a34a" />
-                <circle cx="340" cy="100" r="6" fill="#f97316" />
-                <circle cx="220" cy="160" r="6" fill="#16a34a" />
-                <circle cx="250" cy="160" r="6" fill="#dc2626" />
-                <circle cx="310" cy="160" r="6" fill="#eab308" />
-                <circle cx="340" cy="160" r="6" fill="#16a34a" />
-                <text x="235" y="65" fontSize="9" fontWeight="bold" fill="#16a34a">FRUTAS & VERDURAS</text>
+                {selectedFloor === '1' && (
+                  <>
+                    <rect x="200" y="80" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
+                    <rect x="290" y="80" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
+                    <rect x="200" y="140" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
+                    <rect x="290" y="140" width="70" height="40" rx="8" fill="#dcfce7" stroke="#4ade80" strokeWidth="1.5" />
+                    <circle cx="220" cy="100" r="6" fill="#ef4444" />
+                    <circle cx="250" cy="100" r="6" fill="#eab308" />
+                    <circle cx="310" cy="100" r="6" fill="#16a34a" />
+                    <circle cx="340" cy="100" r="6" fill="#f97316" />
+                    <circle cx="220" cy="160" r="6" fill="#16a34a" />
+                    <circle cx="250" cy="160" r="6" fill="#dc2626" />
+                    <circle cx="310" cy="160" r="6" fill="#eab308" />
+                    <circle cx="340" cy="160" r="6" fill="#16a34a" />
+                  </>
+                )}
+                {selectedFloor === '2' && (
+                  <>
+                    {/* Electrohogar: Lavadoras y Refrigeradores azules */}
+                    <rect x="200" y="80" width="70" height="40" rx="4" fill="#eff6ff" stroke="#3b82f6" strokeWidth="1.5" />
+                    <rect x="290" y="80" width="70" height="40" rx="4" fill="#eff6ff" stroke="#3b82f6" strokeWidth="1.5" />
+                    <rect x="200" y="140" width="70" height="40" rx="4" fill="#eff6ff" stroke="#3b82f6" strokeWidth="1.5" />
+                    <rect x="290" y="140" width="70" height="40" rx="4" fill="#eff6ff" stroke="#3b82f6" strokeWidth="1.5" />
+                    <line x1="235" y1="80" x2="235" y2="120" stroke="#93c5fd" strokeWidth="1" />
+                    <line x1="325" y1="80" x2="325" y2="120" stroke="#93c5fd" strokeWidth="1" />
+                  </>
+                )}
+                {selectedFloor === '3' && (
+                  <>
+                    {/* Terraza: Mesas de jardín y sombrillas redondas */}
+                    <circle cx="235" cy="100" r="15" fill="#fef3c7" stroke="#d97706" strokeWidth="1.5" />
+                    <circle cx="325" cy="100" r="15" fill="#fef3c7" stroke="#d97706" strokeWidth="1.5" />
+                    <rect x="215" y="125" width="40" height="10" rx="2" fill="#e2e8f0" stroke="#94a3b8" />
+                    <rect x="305" y="125" width="40" height="10" rx="2" fill="#e2e8f0" stroke="#94a3b8" />
+                  </>
+                )}
+                <text x="205" y="65" fontSize="8.5" fontWeight="bold" fill="#16a34a">
+                  {selectedFloor === '2' ? 'ELECTROHOGAR & L. BLANCA' : selectedFloor === '3' ? 'TERRAZA & AIRE LIBRE' : 'FRUTAS & VERDURAS'}
+                </text>
               </g>
-
-              {/* CARNICERÍA */}
+ 
+              {/* CARNICERÍA / COMPUTACIÓN / MUEBLES */}
               <g opacity="0.8">
-                <rect x="480" y="50" width="160" height="25" rx="3" fill="#fee2e2" stroke="#fca5a5" strokeWidth="1.5" />
-                <rect x="480" y="105" width="70" height="30" rx="3" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
-                <rect x="570" y="105" width="70" height="30" rx="3" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
-                <line x1="490" y1="62" x2="630" y2="62" stroke="#ef4444" strokeWidth="1.5" />
-                <text x="525" y="40" fontSize="9" fontWeight="bold" fill="#dc2626">CARNES & AVES</text>
+                {selectedFloor === '1' && (
+                  <>
+                    <rect x="480" y="50" width="160" height="25" rx="3" fill="#fee2e2" stroke="#fca5a5" strokeWidth="1.5" />
+                    <rect x="480" y="105" width="70" height="30" rx="3" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
+                    <rect x="570" y="105" width="70" height="30" rx="3" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
+                    <line x1="490" y1="62" x2="630" y2="62" stroke="#ef4444" strokeWidth="1.5" />
+                  </>
+                )}
+                {selectedFloor === '2' && (
+                  <>
+                    {/* Computación: Mesas grises con pantallas de notebooks */}
+                    <rect x="480" y="50" width="160" height="25" rx="3" fill="#f8fafc" stroke="#64748b" strokeWidth="1.5" />
+                    <rect x="495" y="55" width="20" height="12" rx="1" fill="#334155" />
+                    <rect x="535" y="55" width="20" height="12" rx="1" fill="#334155" />
+                    <rect x="575" y="55" width="20" height="12" rx="1" fill="#334155" />
+                  </>
+                )}
+                {selectedFloor === '3' && (
+                  <>
+                    {/* Muebles: Estantes con camas y sofás en exhibición */}
+                    <rect x="485" y="50" width="60" height="40" rx="2" fill="#ffedd5" stroke="#ea580c" strokeWidth="1.5" />
+                    <rect x="560" y="50" width="70" height="25" rx="4" fill="#ffedd5" stroke="#ea580c" strokeWidth="1.5" />
+                  </>
+                )}
+                <text x="485" y="40" fontSize="8.5" fontWeight="bold" fill="#dc2626">
+                  {selectedFloor === '2' ? 'COMPUTACIÓN & FOTO' : selectedFloor === '3' ? 'MUEBLES & DECORACIÓN' : 'CARNES & AVES'}
+                </text>
               </g>
-
-              {/* ABARROTES */}
+ 
+              {/* ABARROTES / VESTUARIO ADULTO / BAÑO */}
               <g opacity="0.8">
-                <rect x="300" y="210" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
-                <rect x="300" y="250" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
-                <rect x="300" y="290" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
-                <rect x="300" y="330" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
-                <line x1="390" y1="210" x2="390" y2="230" stroke="#cbd5e1" strokeWidth="1" />
-                <line x1="390" y1="250" x2="390" y2="270" stroke="#cbd5e1" strokeWidth="1" />
-                <line x1="390" y1="290" x2="390" y2="310" stroke="#cbd5e1" strokeWidth="1" />
-                <line x1="390" y1="330" x2="390" y2="350" stroke="#cbd5e1" strokeWidth="1" />
-                <text x="365" y="198" fontSize="9" fontWeight="bold" fill="#475569">PASILLOS ABARROTES</text>
+                {selectedFloor === '1' && (
+                  <>
+                    <rect x="300" y="210" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
+                    <rect x="300" y="250" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
+                    <rect x="300" y="290" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
+                    <rect x="300" y="330" width="180" height="20" rx="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
+                    <line x1="390" y1="210" x2="390" y2="230" stroke="#cbd5e1" strokeWidth="1" />
+                    <line x1="390" y1="250" x2="390" y2="270" stroke="#cbd5e1" strokeWidth="1" />
+                    <line x1="390" y1="290" x2="390" y2="310" stroke="#cbd5e1" strokeWidth="1" />
+                    <line x1="390" y1="330" x2="390" y2="350" stroke="#cbd5e1" strokeWidth="1" />
+                  </>
+                )}
+                {selectedFloor === '2' && (
+                  <>
+                    {/* Vestuario Adulto: Percheros y estantes elípticos rosas */}
+                    <rect x="300" y="210" width="180" height="20" rx="10" fill="#fce7f3" stroke="#db2777" strokeWidth="1.5" />
+                    <rect x="300" y="270" width="180" height="20" rx="10" fill="#fce7f3" stroke="#db2777" strokeWidth="1.5" />
+                    <rect x="300" y="330" width="180" height="20" rx="10" fill="#fce7f3" stroke="#db2777" strokeWidth="1.5" />
+                  </>
+                )}
+                {selectedFloor === '3' && (
+                  <>
+                    {/* Baño y Organización: Estantes celestes para toallas y organizadores */}
+                    <rect x="300" y="210" width="180" height="20" rx="4" fill="#e0f2fe" stroke="#0284c7" strokeWidth="1.5" />
+                    <rect x="300" y="270" width="180" height="20" rx="4" fill="#e0f2fe" stroke="#0284c7" strokeWidth="1.5" />
+                    <rect x="300" y="330" width="180" height="20" rx="4" fill="#e0f2fe" stroke="#0284c7" strokeWidth="1.5" />
+                  </>
+                )}
+                <text x="310" y="198" fontSize="8.5" fontWeight="bold" fill="#475569">
+                  {selectedFloor === '2' ? 'VESTUARIO ADULTO & CALZADO' : selectedFloor === '3' ? 'BAÑO & ORGANIZACIÓN' : 'PASILLOS ABARROTES'}
+                </text>
               </g>
-
-              {/* LÁCTEOS */}
+ 
+              {/* LÁCTEOS / VESTUARIO INFANTIL / DORMITORIO */}
               <g opacity="0.8">
-                <rect x="680" y="160" width="25" height="190" rx="3" fill="#e0f2fe" stroke="#38bdf8" strokeWidth="1.5" />
-                <rect x="610" y="220" width="50" height="35" rx="3" fill="#e0f2fe" stroke="#38bdf8" strokeWidth="1.5" />
-                <line x1="692" y1="170" x2="692" y2="340" stroke="#0284c7" strokeWidth="2" strokeDasharray="10 5" />
-                <text x="615" y="150" fontSize="9" fontWeight="bold" fill="#0284c7">LÁCTEOS & QUESOS</text>
+                {selectedFloor === '1' && (
+                  <>
+                    <rect x="680" y="160" width="25" height="190" rx="3" fill="#e0f2fe" stroke="#38bdf8" strokeWidth="1.5" />
+                    <rect x="610" y="220" width="50" height="35" rx="3" fill="#e0f2fe" stroke="#38bdf8" strokeWidth="1.5" />
+                    <line x1="692" y1="170" x2="692" y2="340" stroke="#0284c7" strokeWidth="2" strokeDasharray="10 5" />
+                  </>
+                )}
+                {selectedFloor === '2' && (
+                  <>
+                    {/* Ropa Infantil: Estantes decorativos fucsia */}
+                    <rect x="680" y="160" width="25" height="190" rx="3" fill="#fdf2f8" stroke="#f472b6" strokeWidth="1.5" />
+                    <rect x="610" y="220" width="50" height="35" rx="3" fill="#fdf2f8" stroke="#f472b6" strokeWidth="1.5" />
+                  </>
+                )}
+                {selectedFloor === '3' && (
+                  <>
+                    {/* Dormitorio: Estantes color madera/naranja */}
+                    <rect x="680" y="160" width="25" height="190" rx="3" fill="#fff7ed" stroke="#fb923c" strokeWidth="1.5" />
+                    <rect x="610" y="220" width="50" height="35" rx="3" fill="#fff7ed" stroke="#fb923c" strokeWidth="1.5" />
+                  </>
+                )}
+                <text x="590" y="150" fontSize="8.5" fontWeight="bold" fill="#0284c7">
+                  {selectedFloor === '2' ? 'VESTUARIO INFANTIL' : selectedFloor === '3' ? 'DORMITORIO & BLANCOS' : 'LÁCTEOS & QUESOS'}
+                </text>
               </g>
-
-              {/* PANADERÍA */}
+ 
+              {/* PANADERÍA / JUGUETERÍA / DEPORTES */}
               <g opacity="0.8">
-                <rect x="200" y="390" width="100" height="35" rx="4" fill="#fef3c7" stroke="#f59e0b" strokeWidth="1.5" />
-                <rect x="200" y="435" width="60" height="25" rx="3" fill="#fffbeb" stroke="#fde68a" strokeWidth="1" />
-                <text x="215" y="380" fontSize="9" fontWeight="bold" fill="#ea580c">PANADERÍA</text>
+                {selectedFloor === '1' && (
+                  <>
+                    <rect x="200" y="390" width="100" height="35" rx="4" fill="#fef3c7" stroke="#f59e0b" strokeWidth="1.5" />
+                    <rect x="200" y="435" width="60" height="25" rx="3" fill="#fffbeb" stroke="#fde68a" strokeWidth="1" />
+                  </>
+                )}
+                {selectedFloor === '2' && (
+                  <>
+                    {/* Juguetería: Estantes y cajas color lila/morado */}
+                    <rect x="200" y="390" width="100" height="35" rx="4" fill="#faf5ff" stroke="#c084fc" strokeWidth="1.5" />
+                  </>
+                )}
+                {selectedFloor === '3' && (
+                  <>
+                    {/* Deportes: Estantes grises para pesas y bicicletas */}
+                    <rect x="200" y="390" width="100" height="35" rx="4" fill="#f8fafc" stroke="#94a3b8" strokeWidth="1.5" />
+                  </>
+                )}
+                <text x="195" y="380" fontSize="8.5" fontWeight="bold" fill="#ea580c">
+                  {selectedFloor === '2' ? 'JUGUETERÍA & RODADOS' : selectedFloor === '3' ? 'DEPORTES & AUTOMOTRIZ' : 'PANADERÍA'}
+                </text>
               </g>
-
-              {/* CAJAS / CHECKOUT */}
+ 
+              {/* CAJAS */}
               <g opacity="0.8">
                 <g transform="translate(350, 390)">
                   <rect x="0" y="0" width="12" height="45" rx="2" fill="#faf5ff" stroke="#a855f7" strokeWidth="1.2" />
@@ -476,14 +656,34 @@ const MaterialesList = () => {
                   <rect x="15" y="0" width="8" height="8" rx="1" fill="#a855f7" />
                   <line x1="6" y1="10" x2="6" y2="40" stroke="#c084fc" strokeWidth="1" />
                 </g>
-                <text x="390" y="380" fontSize="9" fontWeight="bold" fill="#7e22ce">CAJAS</text>
+                <text x="375" y="380" fontSize="8.5" fontWeight="bold" fill="#7e22ce">
+                  {selectedFloor === '2' ? 'CAJAS PISO 2' : selectedFloor === '3' ? 'CAJAS PISO 3' : 'CAJAS'}
+                </text>
               </g>
-
-              {/* BEBIDAS */}
+ 
+              {/* BEBIDAS / LIBRERÍA / FERRETERÍA */}
               <g opacity="0.8">
-                <rect x="510" y="390" width="100" height="30" rx="3" fill="#ccfbf1" stroke="#0d9488" strokeWidth="1.5" />
-                <rect x="520" y="430" width="80" height="25" rx="3" fill="#f0fdfa" stroke="#5eead4" strokeWidth="1.2" />
-                <text x="535" y="380" fontSize="9" fontWeight="bold" fill="#0f766e">BEBIDAS & LIQUIDOS</text>
+                {selectedFloor === '1' && (
+                  <>
+                    <rect x="510" y="390" width="100" height="30" rx="3" fill="#ccfbf1" stroke="#0d9488" strokeWidth="1.5" />
+                    <rect x="520" y="430" width="80" height="25" rx="3" fill="#f0fdfa" stroke="#5eead4" strokeWidth="1.2" />
+                  </>
+                )}
+                {selectedFloor === '2' && (
+                  <>
+                    {/* Librería: Estantes color ámbar/madera */}
+                    <rect x="510" y="390" width="100" height="30" rx="3" fill="#fffbeb" stroke="#d97706" strokeWidth="1.5" />
+                  </>
+                )}
+                {selectedFloor === '3' && (
+                  <>
+                    {/* Ferretería: Estantes amarillos */}
+                    <rect x="510" y="390" width="100" height="30" rx="3" fill="#fefce8" stroke="#ca8a04" strokeWidth="1.5" />
+                  </>
+                )}
+                <text x="510" y="380" fontSize="8.5" fontWeight="bold" fill="#0f766e">
+                  {selectedFloor === '2' ? 'LIBRERÍA & UTILLERÍA' : selectedFloor === '3' ? 'FERRETERÍA & HERRAMIENTAS' : 'BEBIDAS & LIQUIDOS'}
+                </text>
               </g>
 
             </svg>

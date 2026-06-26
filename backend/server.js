@@ -10,6 +10,32 @@ const DB_PATH = path.join(__dirname, 'db.json');
 app.use(cors());
 app.use(express.json());
 
+// Copiar la imagen de escaleras subida al directorio público del frontend al iniciar
+try {
+  const srcImagePath = 'C:\\Users\\joyce\\.gemini\\antigravity\\brain\\816907e0-3012-4b4c-8dd4-d1e7baf4a049\\media__1782458712427.png';
+  const destDir = path.join(__dirname, '..', 'public');
+  if (fs.existsSync(srcImagePath)) {
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+    fs.copyFileSync(srcImagePath, path.join(destDir, 'escaleras.png'));
+    console.log('Servidor copió exitosamente escaleras.png a la carpeta public del frontend');
+  }
+} catch (err) {
+  console.error('Error al copiar imagen de escaleras a la carpeta public:', err);
+}
+
+// Ruta para servir la imagen de las escaleras mecánicas directamente
+app.get('/images/escaleras.png', (req, res) => {
+  const imagePath = 'C:\\Users\\joyce\\.gemini\\antigravity\\brain\\816907e0-3012-4b4c-8dd4-d1e7baf4a049\\media__1782458712427.png';
+  if (fs.existsSync(imagePath)) {
+    res.sendFile(imagePath);
+  } else {
+    // Redirigir a una imagen de escaleras mecánica de unsplash si no existe el archivo local
+    res.redirect('https://images.unsplash.com/photo-1519642918688-7e43b19245d8?auto=format&fit=crop&q=80&w=600');
+  }
+});
+
 // Helper function to read database
 function readDB() {
   try {
@@ -99,7 +125,8 @@ app.post('/api/zonas/:localId', (req, res) => {
   }
 
   const zonesList = db.zonas[localId];
-  const existingZoneIndex = zonesList.findIndex((z) => z.codigo === newZone.codigo);
+  const targetFloor = newZone.piso || "1";
+  const existingZoneIndex = zonesList.findIndex((z) => z.codigo === newZone.codigo && (z.piso || "1") === targetFloor);
 
   // Determine heatmap status from density value
   const qty = parseInt(newZone.cantidad, 10) || 0;
@@ -110,6 +137,7 @@ app.post('/api/zonas/:localId', (req, res) => {
     computedStatus = 'templado';
   }
   newZone.estado = computedStatus;
+  newZone.piso = targetFloor;
 
   if (existingZoneIndex !== -1) {
     // Update existing zone
