@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { FALLBACK_ZONAS } from '../data/fallbackData';
 
 const Reportes = () => {
   const { selectedLocal } = useAuth();
@@ -14,8 +15,116 @@ const Reportes = () => {
     document.title = 'Jumbo Cencosud - Centro de Reportes';
   }, []);
 
-  const handleDownload = (reportName) => {
-    alert(`Preparando la descarga de: ${reportName}\nModo: Exportación directa de base de datos.`);
+  const generatePDF = (reportName, zonesData, localName) => {
+    const lines = [
+      `========================================================================`,
+      `       REPORTE DE MONITOREO Y TRANSITO TERMICO - JUMBO CENCOSUD`,
+      `========================================================================`,
+      `Sucursal:  ${localName}`,
+      `Reporte:   ${reportName}`,
+      `Fecha:     ${new Date().toLocaleDateString('es-CL')}`,
+      `Estado:    CONSOLIDADOS DE FLUJO OPERATIVO`,
+      `------------------------------------------------------------------------`,
+      ` `,
+    ];
+
+    for (let p = 1; p <= 3; p++) {
+      const floorZones = zonesData.filter(z => (z.piso || "1") === String(p));
+      if (floorZones.length > 0) {
+        lines.push(`--- PISO ${p} ---`);
+        lines.push(`Codigo | Departamento                  | Transito | Estado   | Aforo Max`);
+        lines.push(`-------|-------------------------------|----------|----------|----------`);
+        floorZones.forEach(z => {
+          const codePad = z.codigo.padEnd(6);
+          const namePad = z.nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").slice(0, 29).padEnd(29);
+          const cantPad = String(z.cantidad).padEnd(8);
+          const estPad = z.estado.padEnd(8);
+          const aforoPad = String(z.aforoMax).padEnd(9);
+          lines.push(`${codePad} | ${namePad} | ${cantPad} | ${estPad} | ${aforoPad}`);
+        });
+        lines.push(`------------------------------------------------------------------------`);
+        lines.push(` `);
+      }
+    }
+
+    lines.push(`========================================================================`);
+    lines.push(`Generado automaticamente por el Algoritmo VCM - Jumbo Heatmap System.`);
+    lines.push(`========================================================================`);
+
+    let streamContent = "BT\n/F1 8 Tf\n11 TL\n40 730 Td\n";
+    lines.forEach(line => {
+      const escapedLine = line.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+      streamContent += `(${escapedLine}) Tj T*\n`;
+    });
+    streamContent += "ET";
+
+    const catalogObj = "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
+    const pagesObj = "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n";
+    const fontObj = "<< /F1 << /Type /Font /Subtype /Type1 /BaseFont /Courier >> >>";
+    const pageObj = `3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font ${fontObj} >> /MediaBox [0 0 612 792] /Contents 4 0 R >>\nendobj\n`;
+    const contentStream = `4 0 obj\n<< /Length ${streamContent.length} >>\nstream\n${streamContent}\nendstream\nendobj\n`;
+    
+    const header = "%PDF-1.4\n";
+    const o1 = header.length;
+    const o2 = o1 + catalogObj.length;
+    const o3 = o2 + pagesObj.length;
+    const o4 = o3 + pageObj.length;
+    const xrefOffset = o4 + contentStream.length;
+
+    const xref = `xref\n0 5\n0000000000 65535 f \n${String(o1).padStart(10, '0')} 00000 n \n${String(o2).padStart(10, '0')} 00000 n \n${String(o3).padStart(10, '0')} 00000 n \n${String(o4).padStart(10, '0')} 00000 n \n`;
+    const trailer = `trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+    const pdfContent = header + catalogObj + pagesObj + pageObj + contentStream + xref + trailer;
+    
+    const enc = new TextEncoder();
+    return new Blob([enc.encode(pdfContent)], { type: 'application/pdf' });
+  };
+
+  const handleDownload = (reportName, formatType) => {
+    const localStoredZones = localStorage.getItem(`jumbo_heatmap_zonas_${selectedLocal}`);
+    let zonesData = [];
+    if (localStoredZones) {
+      try {
+        zonesData = JSON.parse(localStoredZones);
+      } catch (e) {
+        zonesData = FALLBACK_ZONAS[selectedLocal] || [];
+      }
+    } else {
+      zonesData = FALLBACK_ZONAS[selectedLocal] || [];
+    }
+
+    const localesNames = {
+      'L-01': 'Jumbo Costanera Center',
+      'L-02': 'Jumbo Alto Las Condes',
+      'L-03': 'Jumbo El Llano'
+    };
+    const localName = localesNames[selectedLocal] || 'Jumbo Costanera Center';
+
+    const formatUpper = String(formatType).toUpperCase();
+    let blob;
+    let fileName = '';
+
+    if (formatUpper.includes('PDF')) {
+      blob = generatePDF(reportName, zonesData, localName);
+      fileName = `${reportName.replace(/\s+/g, '_')}_${selectedLocal}.pdf`;
+    } else {
+      // CSV o Excel (delimitado por punto y coma, con BOM UTF-8)
+      let fileContent = '\uFEFF'; // BOM UTF-8
+      fileContent += 'ID;Código;Piso;Nombre;Estado;Cantidad (personas/hora);Aforo Máximo\n';
+      zonesData.forEach(z => {
+        fileContent += `${z.id};${z.codigo};${z.piso || '1'};${z.nombre};${z.estado};${z.cantidad};${z.aforoMax}\n`;
+      });
+      blob = new Blob([fileContent], { type: 'text/csv;charset=utf-8;' });
+      fileName = `${reportName.replace(/\s+/g, '_')}_${selectedLocal}.csv`;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -45,7 +154,7 @@ const Reportes = () => {
             </div>
             <h3 style={{ margin: 0, fontSize: '1rem', color: '#0f172a' }}>Exportar en {format}</h3>
             <button 
-              onClick={() => handleDownload(`Consolidado Completo - Formato ${format}`)}
+              onClick={() => handleDownload(`Consolidado Completo`, format)}
               style={{
                 marginTop: '0.8rem',
                 backgroundColor: '#008751',
@@ -86,7 +195,7 @@ const Reportes = () => {
                 <td style={{ padding: '1rem 1.5rem' }}><span className="detail-badge static-badge">{r.type}</span> {r.size}</td>
                 <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                   <button 
-                    onClick={() => handleDownload(r.name)}
+                    onClick={() => handleDownload(r.name, r.type)}
                     style={{
                       backgroundColor: '#f1f5f9',
                       border: '1px solid #cbd5e1',
